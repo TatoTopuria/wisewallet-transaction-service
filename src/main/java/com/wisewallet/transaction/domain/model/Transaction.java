@@ -40,8 +40,13 @@ public class Transaction {
     private TransactionType type;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 10)
+    @Column(name = "status", nullable = false, length = 25)
     private TransactionStatus status;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    @Builder.Default
+    private Long version = 0L;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "category", length = 20)

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="005-add-version-to-transactions" author="wisewallet-migrations" runOnChange="false" failOnError="true">
+        <addColumn schemaName="transaction" tableName="transactions">
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="005-extend-status-check-compensation-pending" author="wisewallet-migrations" runOnChange="false" failOnError="true">
+        <sql>
+            ALTER TABLE transaction.transactions
+                DROP CONSTRAINT IF EXISTS chk_transaction_status;
+
+            ALTER TABLE transaction.transactions
+                ADD CONSTRAINT chk_transaction_status
+                    CHECK (status IN ('PENDING', 'DEBITED', 'COMPLETED', 'FAILED', 'CANCELLED', 'COMPENSATION_PENDING'));
+        </sql>
+    </changeSet>
+
+    <!-- TX-06 quick win: unique index to prevent duplicate transfer legs on replay -->
+    <changeSet id="005-add-unique-index-transfer-account" author="wisewallet-migrations" runOnChange="false" failOnError="true">
+        <sql>
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_transfer_account
+                ON transaction.transactions (transfer_id, account_id)
+                WHERE transfer_id IS NOT NULL;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

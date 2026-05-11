@@ -5,5 +5,6 @@ public enum TransactionStatus {
     DEBITED,
     COMPLETED,
     FAILED,
-    CANCELLED
+    CANCELLED,
+    COMPENSATION_PENDING
 }

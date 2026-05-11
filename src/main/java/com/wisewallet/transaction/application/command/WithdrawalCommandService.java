@@ -14,16 +14,13 @@ import com.wisewallet.transaction.domain.service.CategoryRuleEngine;
 import com.wisewallet.transaction.presentation.dto.request.WithdrawalRequest;
 import com.wisewallet.transaction.presentation.dto.response.TransactionResponse;
 import com.wisewallet.transaction.presentation.mapper.TransactionMapper;
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
@@ -39,12 +36,6 @@ public class WithdrawalCommandService {
     private final TransactionMapper transactionMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
-
-    @Value("${wisewallet.transaction.saga.feign-retry-attempts:3}")
-    private int retryAttempts;
-
-    @Value("${wisewallet.transaction.saga.feign-retry-backoff-ms:100}")
-    private long retryBackoffMs;
 
     @Transactional
     public TransactionResponse withdraw(UUID userId, String idempotencyKey, WithdrawalRequest request) {
@@ -63,7 +54,8 @@ public class WithdrawalCommandService {
 
     protected TransactionResponse executeWithdrawal(UUID userId, String idempotencyKey, WithdrawalRequest request) {
         UUID txnId = UUID.randomUUID();
-        debitWithRetry(request.accountId(), request.amount(), request.currency(), txnId);
+        // Optimistic-lock conflicts on debit are retried via accountServiceRetry Resilience4j policy
+        accountServicePort.debit(request.accountId(), request.amount(), request.currency(), txnId);
 
         var category = categoryRuleEngine.categorize(TransactionType.WITHDRAWAL, request.mccCode(), null);
 
@@ -93,28 +85,5 @@ public class WithdrawalCommandService {
         }
 
         return response;
-    }
-
-    private void debitWithRetry(UUID accountId, BigDecimal amount, String currency, UUID transactionId) {
-        int attempt = 0;
-        while (true) {
-            attempt++;
-            try {
-                accountServicePort.debit(accountId, amount, currency, transactionId);
-                return;
-            } catch (FeignException.Conflict e) {
-                if (attempt >= retryAttempts) {
-                    throw e;
-                }
-                log.warn("Optimistic lock conflict on debit attempt {}/{}, retrying in {}ms",
-                        attempt, retryAttempts, retryBackoffMs);
-                try {
-                    Thread.sleep(retryBackoffMs);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException("Interrupted during debit retry", ie);
-                }
-            }
-        }
     }
 }

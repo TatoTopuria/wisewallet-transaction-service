@@ -38,6 +38,9 @@ public class OutboxPublisherService {
     @Value("${wisewallet.transaction.kafka.topics.txn-categorized:txn.categorized}")
     private String txnCategorizedTopic;
 
+    @Value("${wisewallet.transaction.kafka.topics.txn-compensation:txn.compensation}")
+    private String txnCompensationTopic;
+
     @Scheduled(fixedDelayString = "${wisewallet.transaction.outbox.poll-fixed-delay-ms:2000}")
     @Transactional
     public void pollAndPublish() {
@@ -69,6 +72,7 @@ public class OutboxPublisherService {
         return switch (eventType) {
             case "txn.created" -> txnCreatedTopic;
             case "txn.categorized" -> txnCategorizedTopic;
+            case "txn.compensation.needed" -> txnCompensationTopic;
             default -> throw new IllegalArgumentException("Unknown event type: " + eventType);
         };
     }

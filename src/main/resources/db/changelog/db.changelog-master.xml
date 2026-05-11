@@ -10,5 +10,6 @@
     <include file="db/changelog/002-create-idempotency-keys-table.xml"/>
     <include file="db/changelog/003-create-txn-outbox-table.xml"/>
     <include file="db/changelog/004-add-currency-and-cancelled-status.xml"/>
+    <include file="db/changelog/005-add-version-to-transactions.xml"/>
 
 </databaseChangeLog>

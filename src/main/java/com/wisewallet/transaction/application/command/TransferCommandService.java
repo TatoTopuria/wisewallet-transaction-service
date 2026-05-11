@@ -12,11 +12,13 @@ import com.wisewallet.transaction.domain.model.TransactionCategory;
 import com.wisewallet.transaction.domain.model.TransactionStatus;
 import com.wisewallet.transaction.domain.model.TransactionType;
 import com.wisewallet.transaction.domain.repository.TransactionRepositoryPort;
+import com.wisewallet.transaction.infrastructure.messaging.CompensationOutboxService;
 import com.wisewallet.transaction.presentation.dto.request.TransferRequest;
 import com.wisewallet.transaction.presentation.dto.response.TransactionResponse;
 import com.wisewallet.transaction.presentation.dto.response.TransferResponse;
 import com.wisewallet.transaction.presentation.mapper.TransactionMapper;
 import feign.FeignException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -37,6 +39,7 @@ public class TransferCommandService {
 
     private final TransactionRepositoryPort transactionRepository;
     private final AccountServicePort accountServicePort;
+    private final CompensationOutboxService compensationOutboxService;
     private final IdempotencyService idempotencyService;
     private final TransactionMapper transactionMapper;
     private final ApplicationEventPublisher eventPublisher;
@@ -74,7 +77,7 @@ public class TransferCommandService {
             failBothLegs(debitTxn, creditTxn, idempotencyKey, userId,
                     "Insufficient available balance or source account is not ACTIVE", 422);
             throw new BusinessRuleException("Insufficient available balance or source account is not ACTIVE");
-        } catch (FeignException e) {
+        } catch (FeignException | CallNotPermittedException e) {
             failBothLegs(debitTxn, creditTxn, idempotencyKey, userId,
                     "Account service error during reservation", 422);
             throw new BusinessRuleException("Account service error during reservation: " + e.getMessage());
@@ -86,7 +89,7 @@ public class TransferCommandService {
         // Phase 4 — Credit destination [Feign]
         try {
             accountServicePort.credit(request.destinationAccountId(), request.amount(), request.currency(), creditTxn.getId());
-        } catch (FeignException e) {
+        } catch (FeignException | CallNotPermittedException e) {
             log.warn("Credit to destination {} failed, initiating rollback. transferId={}",
                     request.destinationAccountId(), transferId);
             rollback(debitTxn, creditTxn, reservation.reservationId(),
@@ -97,15 +100,36 @@ public class TransferCommandService {
         // Phase 5 — Commit reservation [Feign]
         try {
             accountServicePort.commit(request.sourceAccountId(), reservation.reservationId(), request.currency());
-        } catch (Exception e) {
-            // CRITICAL: destination credited but reservation not committed
+        } catch (Exception commitEx) {
+            // CRITICAL: destination credited but reservation not committed.
+            // Attempt synchronous compensation first; fall back to outbox if sync fails.
             log.error(
                     "CRITICAL: Transfer commit failed after credit succeeded. " +
                     "transferId={}, reservationId={}, sourceAccountId={}, destinationAccountId={}. " +
-                    "Manual investigation required. Reservation will auto-expire in 10 minutes.",
+                    "Attempting synchronous compensation.",
                     transferId, reservation.reservationId(),
-                    request.sourceAccountId(), request.destinationAccountId(), e);
+                    request.sourceAccountId(), request.destinationAccountId(), commitEx);
             meterRegistry.counter("transfer.commit.failure.count").increment();
+
+            boolean syncCompensated = trySyncCompensation(
+                    request.sourceAccountId(), reservation.reservationId(),
+                    request.destinationAccountId(), request.amount(), request.currency(),
+                    creditTxn.getId());
+
+            if (syncCompensated) {
+                failBothLegs(debitTxn, creditTxn, idempotencyKey, userId,
+                        "Transfer commit failed; compensation applied", 422);
+            } else {
+                // Sync compensation failed — schedule via outbox (REQUIRES_NEW, survives rollback)
+                debitTxn.setStatus(TransactionStatus.COMPENSATION_PENDING);
+                creditTxn.setStatus(TransactionStatus.COMPENSATION_PENDING);
+                transactionRepository.save(debitTxn);
+                transactionRepository.save(creditTxn);
+                compensationOutboxService.scheduleCompensation(
+                        transferId, reservation.reservationId(),
+                        request.sourceAccountId(), request.destinationAccountId(),
+                        request.amount(), request.currency(), creditTxn.getId());
+            }
             throw new BusinessRuleException(
                     "Transfer commit failed after credit. Contact support with transferId: " + transferId);
         }
@@ -180,11 +204,14 @@ public class TransferCommandService {
 
     protected void rollback(Transaction debitTxn, Transaction creditTxn, UUID reservationId,
                             UUID sourceAccountId, String currency, String idempotencyKey, UUID userId, String reason) {
-        try {
-            accountServicePort.release(sourceAccountId, reservationId, currency);
-        } catch (Exception e) {
-            log.error("Failed to release reservation {} during rollback. Manual action required. reason={}",
-                    reservationId, reason, e);
+        boolean released = tryReleaseWithRetry(sourceAccountId, reservationId, currency, debitTxn.getTransferId());
+
+        if (!released) {
+            // All retries exhausted — schedule async compensation for release only
+            compensationOutboxService.scheduleCompensation(
+                    debitTxn.getTransferId(), reservationId,
+                    sourceAccountId, null,
+                    debitTxn.getAmount().negate(), currency, null);
         }
 
         debitTxn.setStatus(TransactionStatus.FAILED);
@@ -203,6 +230,61 @@ public class TransferCommandService {
             idempotencyService.complete(idempotencyKey, userId, 422, objectMapper.writeValueAsString(failResult));
         } catch (Exception e) {
             log.warn("Failed to store failure idempotency response for key {}", idempotencyKey, e);
+        }
+    }
+
+    /** Attempts to release a reservation with up to 3 retries (exponential back-off). */
+    private boolean tryReleaseWithRetry(UUID sourceAccountId, UUID reservationId,
+                                        String currency, UUID transferId) {
+        long[] backoffMs = {200L, 400L, 800L};
+        for (int attempt = 0; attempt < backoffMs.length; attempt++) {
+            try {
+                accountServicePort.release(sourceAccountId, reservationId, currency);
+                return true;
+            } catch (Exception e) {
+                log.warn("Release attempt {}/{} failed during rollback. transferId={}, reservationId={}",
+                        attempt + 1, backoffMs.length, transferId, reservationId, e);
+                if (attempt < backoffMs.length - 1) {
+                    try {
+                        Thread.sleep(backoffMs[attempt]);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        log.warn("Interrupted during rollback release retry. transferId={}", transferId);
+                        return false;
+                    }
+                }
+            }
+        }
+        log.error("All release retries exhausted. Scheduling async compensation. transferId={}, reservationId={}",
+                transferId, reservationId);
+        return false;
+    }
+
+    /**
+     * Synchronous compensation after commit failure:
+     * 1. Release source reservation.
+     * 2. Debit destination to reverse the credit.
+     * Returns true if both operations succeeded.
+     */
+    private boolean trySyncCompensation(UUID sourceAccountId, UUID reservationId,
+                                        UUID destinationAccountId, java.math.BigDecimal amount,
+                                        String currency, UUID creditTransactionId) {
+        try {
+            accountServicePort.release(sourceAccountId, reservationId, currency);
+        } catch (Exception releaseEx) {
+            log.error("Sync compensation: release failed. sourceAccountId={}, reservationId={}",
+                    sourceAccountId, reservationId, releaseEx);
+            return false;
+        }
+        UUID reversalTxnId = UUID.nameUUIDFromBytes(
+                ("debit-reverse:" + creditTransactionId)
+                        .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        try {
+            accountServicePort.debit(destinationAccountId, amount, currency, reversalTxnId);
+            return true;
+        } catch (Exception debitEx) {
+            log.error("Sync compensation: debit-reversal failed. destinationAccountId={}", destinationAccountId, debitEx);
+            return false;
         }
     }
 

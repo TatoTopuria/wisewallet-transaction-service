@@ -59,6 +59,8 @@ wisewallet:
       topics:
         txn-created: txn.created
         txn-categorized: txn.categorized
+        txn-compensation: txn.compensation
+      compensation-consumer-group: txn-compensation-group
     pagination:
       default-page-size: 10
     saga:
@@ -69,14 +71,60 @@ resilience4j:
   circuitbreaker:
     instances:
       accountService:
-        slidingWindowSize: 10
+        slidingWindowSize: 20
         failureRateThreshold: 50
         waitDurationInOpenState: 30s
-        permittedNumberOfCallsInHalfOpenState: 3
+        permittedNumberOfCallsInHalfOpenState: 5
+        recordExceptions:
+          - feign.FeignException
+          - java.io.IOException
+        ignoreExceptions:
+          - feign.FeignException.UnprocessableEntity
+  retry:
+    instances:
+      accountServiceRetry:
+        maxAttempts: 3
+        waitDuration: 200ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - feign.FeignException.ServiceUnavailable
+          - feign.FeignException.GatewayTimeout
+          - feign.FeignException.Conflict
+          - java.io.IOException
+      accountServiceCommit:
+        maxAttempts: 5
+        waitDuration: 500ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - feign.FeignException.ServiceUnavailable
+          - feign.FeignException.GatewayTimeout
+          - feign.FeignException.Conflict
+          - java.io.IOException
+      accountServiceRelease:
+        maxAttempts: 5
+        waitDuration: 500ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - feign.FeignException.ServiceUnavailable
+          - feign.FeignException.GatewayTimeout
+          - feign.FeignException.Conflict
+          - java.io.IOException
 
 account:
   service:
     url: ${ACCOUNT_SERVICE_URL:http://localhost:8081}
+
+spring:
+  cloud:
+    openfeign:
+      client:
+        config:
+          accountServiceFeignClient:
+            connectTimeout: 2000
+            readTimeout: 5000
 
 springdoc:
   api-docs:
