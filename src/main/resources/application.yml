@@ -45,6 +45,8 @@ management:
 wisewallet:
   internal:
     api-key: ${INTERNAL_API_KEY}
+    jwt:
+      secret: ${INTERNAL_JWT_SECRET}
   transaction:
     outbox:
       poll-fixed-delay-ms: 2000

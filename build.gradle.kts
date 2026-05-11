@@ -37,6 +37,7 @@ dependencies {
 
     // Spring Boot
     implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.security)
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.actuator)
@@ -46,6 +47,11 @@ dependencies {
     // Resilience4j
     implementation(libs.resilience4j.spring.boot3)
     implementation(libs.resilience4j.feign)
+
+    // JJWT
+    implementation(libs.jjwt.api)
+    runtimeOnly(libs.jjwt.impl)
+    runtimeOnly(libs.jjwt.jackson)
 
     // Database
     runtimeOnly(libs.postgresql)

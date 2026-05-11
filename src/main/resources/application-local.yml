@@ -17,3 +17,8 @@ spring:
 logging:
   level:
     com.wisewallet: DEBUG
+
+wisewallet:
+  internal:
+    jwt:
+      secret: ${INTERNAL_JWT_SECRET:local-dev-internal-jwt-secret-needs-32chars!}
