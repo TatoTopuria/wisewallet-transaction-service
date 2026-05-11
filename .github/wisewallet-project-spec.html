@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WiseWallet — Project Spec</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf9f7;
+    --surface: #ffffff;
+    --surface-2: #f3f1ee;
+    --border: #e4e0da;
+    --text: #1a1714;
+    --text-2: #4a453d;
+    --text-muted: #8a8279;
+    --ink: #0d0b09;
+    --accent: #c05e2e;
+    --accent-light: #f4e8e0;
+    --blue: #2e6bc0;
+    --blue-light: #e0eaf4;
+    --green: #2e8b57;
+    --green-light: #e0f0e8;
+    --purple: #6b4fa0;
+    --purple-light: #ede0f4;
+    --red: #b84233;
+    --red-light: #f4e0de;
+    --yellow: #a08520;
+    --yellow-light: #f4f0d8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 4.5rem 1.5rem 3.5rem;
+    border-bottom: 2px solid var(--ink);
+    position: relative;
+  }
+  .hero-inner { max-width: 900px; margin: 0 auto; }
+  .hero-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+  .hero h1 {
+    font-size: clamp(2.4rem, 5.5vw, 3.8rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 0.6rem;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--accent);
+  }
+  .hero-desc {
+    font-size: 1.1rem;
+    color: var(--text-2);
+    max-width: 620px;
+    font-weight: 400;
+    margin-bottom: 1.5rem;
+  }
+  .hero-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .meta-item {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .meta-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── SECTION FRAMEWORK ── */
+  .section {
+    padding: 3rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .section:last-child { border-bottom: none; }
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+  .section h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 0.4rem;
+  }
+  .section-lead {
+    color: var(--text-2);
+    font-size: 0.95rem;
+    margin-bottom: 1.75rem;
+    max-width: 640px;
+  }
+
+  /* ── OVERVIEW BRIEF ── */
+  .brief-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 600px) { .brief-grid { grid-template-columns: 1fr; } }
+  .brief-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.3rem 1.4rem;
+  }
+  .brief-card h4 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--ink);
+    display: flex; align-items: center; gap: 0.45rem;
+  }
+  .brief-card p {
+    font-size: 0.85rem;
+    color: var(--text-2);
+    line-height: 1.6;
+  }
+
+  /* ── ARCHITECTURE ── */
+  .arch-svg-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+  }
+  .arch-svg-wrap svg { display: block; margin: 0 auto; }
+
+  /* ── SERVICE CARDS ── */
+  .services { display: flex; flex-direction: column; gap: 1.25rem; }
+  .svc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    border-left: 4px solid;
+  }
+  .svc-header {
+    padding: 1.2rem 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    user-select: none;
+  }
+  .svc-icon {
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .svc-header-text { flex: 1; }
+  .svc-header-text h3 { font-size: 1rem; font-weight: 600; color: var(--ink); }
+  .svc-header-text .svc-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .svc-toggle {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    transition: transform 0.3s;
+    line-height: 1;
+  }
+  .svc.open .svc-toggle { transform: rotate(180deg); }
+  .svc-body {
+    display: none;
+    padding: 0 1.5rem 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .svc.open .svc-body { display: block; }
+
+  .svc-section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 1rem 0 0.5rem;
+  }
+  .svc-body ul {
+    list-style: none;
+    padding: 0;
+  }
+  .svc-body ul li {
+    font-size: 0.88rem;
+    padding: 0.35rem 0;
+    padding-left: 1.2rem;
+    position: relative;
+    color: var(--text-2);
+    line-height: 1.55;
+  }
+  .svc-body ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
+  .tech-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
+  .tt {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .tt.spring { background: var(--green-light); color: var(--green); }
+  .tt.db { background: var(--blue-light); color: var(--blue); }
+  .tt.msg { background: var(--accent-light); color: var(--accent); }
+  .tt.cloud { background: var(--yellow-light); color: var(--yellow); }
+  .tt.ai { background: var(--purple-light); color: var(--purple); }
+  .tt.test { background: var(--red-light); color: var(--red); }
+  .tt.ops { background: #e4e0da; color: var(--text-2); }
+
+  /* ── Colors per service ── */
+  .svc.gateway   { border-left-color: var(--blue); }
+  .svc.gateway .svc-icon { background: var(--blue-light); }
+  .svc.account   { border-left-color: var(--green); }
+  .svc.account .svc-icon { background: var(--green-light); }
+  .svc.txn       { border-left-color: var(--accent); }
+  .svc.txn .svc-icon { background: var(--accent-light); }
+  .svc.notif     { border-left-color: var(--red); }
+  .svc.notif .svc-icon { background: var(--red-light); }
+  .svc.advisor   { border-left-color: var(--purple); }
+  .svc.advisor .svc-icon { background: var(--purple-light); }
+
+  /* ── API TABLE ── */
+  .api-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .api-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 0.8rem 1rem;
+    background: var(--surface-2);
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .api-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .api-table tr:last-child td { border-bottom: none; }
+  .method {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.12rem 0.4rem;
+    border-radius: 4px;
+  }
+  .method.get { background: var(--green-light); color: var(--green); }
+  .method.post { background: var(--blue-light); color: var(--blue); }
+  .method.put { background: var(--yellow-light); color: var(--yellow); }
+  .method.delete { background: var(--red-light); color: var(--red); }
+  .api-path {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink);
+  }
+
+  /* ── STEP BY STEP ── */
+  .steps { counter-reset: step; }
+  .step {
+    display: flex;
+    gap: 1.2rem;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    counter-increment: step;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .step-num::before { content: counter(step); }
+  .step-content h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 0.25rem;
+  }
+  .step-content p {
+    font-size: 0.85rem;
+    color: var(--text-2);
+    line-height: 1.6;
+  }
+  .step-week {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+  .step-week.w1 { background: var(--blue-light); color: var(--blue); }
+  .step-week.w2 { background: var(--green-light); color: var(--green); }
+  .step-week.w3 { background: var(--accent-light); color: var(--accent); }
+  .step-week.w4 { background: var(--purple-light); color: var(--purple); }
+
+  /* ── CHECKLIST ── */
+  .checklist-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  @media (max-width: 600px) { .checklist-grid { grid-template-columns: 1fr; } }
+  .check-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.2rem;
+  }
+  .check-group h4 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+    color: var(--ink);
+  }
+  .check-item {
+    font-size: 0.82rem;
+    color: var(--text-2);
+    padding: 0.25rem 0;
+    padding-left: 1.4rem;
+    position: relative;
+  }
+  .check-item::before {
+    content: '☐';
+    position: absolute;
+    left: 0;
+    color: var(--text-muted);
+  }
+
+  /* ── DATA MODELS (code-like) ── */
+  .model-block {
+    background: #1a1714;
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    overflow-x: auto;
+    margin-top: 0.5rem;
+  }
+  .model-block pre {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.65;
+    color: #d4cfca;
+  }
+  .model-block .kw { color: #c05e2e; }
+  .model-block .type { color: #6b9ed6; }
+  .model-block .ann { color: #8a8279; }
+  .model-block .str { color: #7dba6a; }
+  .model-block .cmt { color: #5e5a55; font-style: italic; }
+
+  /* ── BLUEPRINT SECTION ── */
+  .pattern-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 640px) { .pattern-grid { grid-template-columns: 1fr; } }
+  .pattern-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem 1.3rem;
+  }
+  .pattern-card h4 {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .pattern-card p {
+    font-size: 0.82rem;
+    color: var(--text-2);
+    line-height: 1.6;
+    margin-bottom: 0.7rem;
+  }
+  .layer-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  .layer-row {
+    display: flex;
+    align-items: stretch;
+    border-bottom: 1px solid var(--border);
+  }
+  .layer-row:last-child { border-bottom: none; }
+  .layer-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.8rem 1rem;
+    width: 130px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    border-right: 1px solid var(--border);
+  }
+  .layer-content {
+    padding: 0.7rem 1rem;
+    font-size: 0.82rem;
+    color: var(--text-2);
+    line-height: 1.6;
+    flex: 1;
+  }
+  .layer-content code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    background: var(--surface-2);
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+  .layer-row.domain .layer-label { background: var(--green-light); color: var(--green); }
+  .layer-row.application .layer-label { background: var(--blue-light); color: var(--blue); }
+  .layer-row.infrastructure .layer-label { background: var(--yellow-light); color: var(--yellow); }
+  .layer-row.presentation .layer-label { background: var(--accent-light); color: var(--accent); }
+  .dep-rule {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.4rem;
+  }
+  .dep-rule strong { color: var(--text); }
+
+  /* ── FOOTER ── */
+  .footer {
+    padding: 2.5rem 1.5rem;
+    border-top: 2px solid var(--ink);
+    text-align: center;
+  }
+  .footer-inner {
+    max-width: 640px;
+    margin: 0 auto;
+    font-size: 0.88rem;
+    color: var(--text-2);
+    line-height: 1.7;
+  }
+  .footer-inner strong { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<header class="hero">
+  <div class="hero-inner">
+    <p class="hero-eyebrow">Portfolio Project Specification</p>
+    <h1>WiseWallet — <em>Smart&nbsp;Finance Platform</em></h1>
+    <p class="hero-desc">A microservices-based personal finance platform with real-time transaction processing, event-driven notifications, AI-powered financial insights, and full cloud infrastructure — covering every tool from your roadmap.</p>
+    <div class="hero-meta">
+      <span class="meta-item"><span class="meta-dot" style="background:var(--blue)"></span> 5 Microservices</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--green)"></span> Java 21 + Spring Boot 3</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--accent)"></span> Kafka + SQS/SNS</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--purple)"></span> RAG / LLM Integration</span>
+      <span class="meta-item"><span class="meta-dot" style="background:var(--red)"></span> Full CI/CD + Observability</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ BUSINESS CONTEXT ═══════════════ -->
+<section class="section container">
+  <p class="section-num">01 — The Scenario</p>
+  <h2>What You're Building</h2>
+  <p class="section-lead">You're the founding backend engineer at a digital banking startup. Build the core platform from scratch — the same challenge both Wio and Mal describe in their vacancies.</p>
+  <div class="brief-grid">
+    <div class="brief-card">
+      <h4>🏦 Multi-Account Banking</h4>
+      <p>Users create accounts (checking, savings, investment), view balances, and manage profiles. Implements Spring Security JWT auth, role-based access, and Spring Data JPA with PostgreSQL.</p>
+    </div>
+    <div class="brief-card">
+      <h4>💸 Transaction Engine</h4>
+      <p>Process deposits, withdrawals, and transfers between accounts with idempotency, balance validation, and automatic category tagging. Publishes events to Kafka for downstream consumers.</p>
+    </div>
+    <div class="brief-card">
+      <h4>🔔 Event-Driven Notifications</h4>
+      <p>Kafka consumers trigger real-time alerts: low balance warnings, large transaction notifications, daily summaries. Demonstrates fan-out via SNS/SQS pattern.</p>
+    </div>
+    <div class="brief-card">
+      <h4>🤖 AI Financial Advisor</h4>
+      <p>LLM-powered spending analysis and financial advice. Uses RAG with vector store to ground responses in the user's actual transaction history. Spring AI + pgvector.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ARCHITECTURE ═══════════════ -->
+<section class="section container">
+  <p class="section-num">02 — Architecture</p>
+  <h2>System Design</h2>
+  <p class="section-lead">Five services behind an API Gateway, communicating through both synchronous REST and asynchronous Kafka events. Full observability with OpenTelemetry.</p>
+
+  <div class="arch-svg-wrap">
+    <svg viewBox="0 0 820 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;">
+      <style>
+        .box { fill: #fff; stroke: #e4e0da; stroke-width: 1.5; rx: 10; }
+        .box-label { font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; fill: #1a1714; }
+        .box-sub { font-family: 'IBM Plex Mono', monospace; font-size: 9px; fill: #8a8279; }
+        .arrow { stroke: #c4bfb8; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+        .arrow-kafka { stroke: #c05e2e; stroke-width: 1.5; fill: none; stroke-dasharray: 6 3; marker-end: url(#arrowhead-k); }
+        .infra-box { fill: #f3f1ee; stroke: #e4e0da; stroke-width: 1; rx: 8; stroke-dasharray: 5 3; }
+        .infra-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; fill: #8a8279; letter-spacing: 0.5px; }
+        .accent-strip { rx: 10; ry: 10; }
+      </style>
+      <defs>
+        <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="none" stroke="#c4bfb8" stroke-width="1.2"/>
+        </marker>
+        <marker id="arrowhead-k" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="none" stroke="#c05e2e" stroke-width="1.2"/>
+        </marker>
+      </defs>
+
+      <!-- Client -->
+      <rect x="340" y="10" width="140" height="48" class="box"/>
+      <rect x="340" y="10" width="140" height="4" fill="#1a1714" class="accent-strip"/>
+      <text x="410" y="35" text-anchor="middle" class="box-label">Client / Mobile</text>
+      <text x="410" y="48" text-anchor="middle" class="box-sub">REST / HTTPS</text>
+
+      <line x1="410" y1="58" x2="410" y2="88" class="arrow"/>
+
+      <!-- API Gateway -->
+      <rect x="310" y="88" width="200" height="55" class="box"/>
+      <rect x="310" y="88" width="200" height="4" fill="#2e6bc0" class="accent-strip"/>
+      <text x="410" y="113" text-anchor="middle" class="box-label">API Gateway</text>
+      <text x="410" y="128" text-anchor="middle" class="box-sub">Spring Cloud Gateway · JWT · Rate Limit</text>
+
+      <!-- Lines from Gateway to services -->
+      <line x1="320" y1="143" x2="120" y2="208" class="arrow"/>
+      <line x1="380" y1="143" x2="310" y2="208" class="arrow"/>
+      <line x1="440" y1="143" x2="510" y2="208" class="arrow"/>
+      <line x1="500" y1="143" x2="700" y2="208" class="arrow"/>
+
+      <!-- Account Service -->
+      <rect x="30" y="208" width="180" height="55" class="box"/>
+      <rect x="30" y="208" width="180" height="4" fill="#2e8b57" class="accent-strip"/>
+      <text x="120" y="233" text-anchor="middle" class="box-label">Account Service</text>
+      <text x="120" y="248" text-anchor="middle" class="box-sub">Users · Accounts · Balances</text>
+
+      <!-- Transaction Service -->
+      <rect x="220" y="208" width="180" height="55" class="box"/>
+      <rect x="220" y="208" width="180" height="4" fill="#c05e2e" class="accent-strip"/>
+      <text x="310" y="233" text-anchor="middle" class="box-label">Transaction Service</text>
+      <text x="310" y="248" text-anchor="middle" class="box-sub">Transfers · Categories · Ledger</text>
+
+      <!-- AI Advisor -->
+      <rect x="420" y="208" width="180" height="55" class="box"/>
+      <rect x="420" y="208" width="180" height="4" fill="#6b4fa0" class="accent-strip"/>
+      <text x="510" y="233" text-anchor="middle" class="box-label">AI Advisor Service</text>
+      <text x="510" y="248" text-anchor="middle" class="box-sub">RAG · LLM · Spending Analysis</text>
+
+      <!-- Notification Service -->
+      <rect x="610" y="208" width="180" height="55" class="box"/>
+      <rect x="610" y="208" width="180" height="4" fill="#b84233" class="accent-strip"/>
+      <text x="700" y="233" text-anchor="middle" class="box-label">Notification Service</text>
+      <text x="700" y="248" text-anchor="middle" class="box-sub">Alerts · Emails · Webhooks</text>
+
+      <!-- Kafka Bus -->
+      <rect x="120" y="310" width="580" height="42" rx="8" fill="#fdf6f1" stroke="#c05e2e" stroke-width="1.5"/>
+      <text x="410" y="330" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" font-weight="600" fill="#c05e2e">Apache Kafka Event Bus</text>
+      <text x="410" y="343" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="8" fill="#8a8279">txn.created · txn.categorized · account.balance-low · alert.triggered</text>
+
+      <!-- Kafka arrows -->
+      <line x1="310" y1="263" x2="310" y2="310" class="arrow-kafka"/>
+      <line x1="700" y1="310" x2="700" y2="263" class="arrow-kafka"/>
+      <line x1="510" y1="310" x2="510" y2="263" class="arrow-kafka"/>
+      <line x1="120" y1="310" x2="120" y2="263" class="arrow-kafka"/>
+
+      <!-- Infra layer -->
+      <rect x="30" y="385" width="230" height="120" class="infra-box"/>
+      <text x="145" y="403" text-anchor="middle" class="infra-label">DATA STORES</text>
+      <rect x="45" y="412" width="95" height="36" class="box"/>
+      <text x="92" y="430" text-anchor="middle" class="box-sub">PostgreSQL</text>
+      <text x="92" y="442" text-anchor="middle" class="box-sub">(RDS / Aurora)</text>
+      <rect x="150" y="412" width="95" height="36" class="box"/>
+      <text x="197" y="430" text-anchor="middle" class="box-sub">pgvector</text>
+      <text x="197" y="442" text-anchor="middle" class="box-sub">(Embeddings)</text>
+      <rect x="45" y="458" width="200" height="36" class="box"/>
+      <text x="145" y="476" text-anchor="middle" class="box-sub">Redis (Session Cache / Rate Limiting)</text>
+
+      <rect x="290" y="385" width="230" height="120" class="infra-box"/>
+      <text x="405" y="403" text-anchor="middle" class="infra-label">OBSERVABILITY</text>
+      <rect x="305" y="412" width="95" height="36" class="box"/>
+      <text x="352" y="430" text-anchor="middle" class="box-sub">OpenTelemetry</text>
+      <text x="352" y="442" text-anchor="middle" class="box-sub">Agent</text>
+      <rect x="410" y="412" width="95" height="36" class="box"/>
+      <text x="457" y="430" text-anchor="middle" class="box-sub">Prometheus</text>
+      <text x="457" y="442" text-anchor="middle" class="box-sub">+ Grafana</text>
+      <rect x="305" y="458" width="200" height="36" class="box"/>
+      <text x="405" y="480" text-anchor="middle" class="box-sub">Structured Logging (Logback + ELK)</text>
+
+      <rect x="550" y="385" width="240" height="120" class="infra-box"/>
+      <text x="670" y="403" text-anchor="middle" class="infra-label">INFRASTRUCTURE</text>
+      <rect x="565" y="412" width="95" height="36" class="box"/>
+      <text x="612" y="430" text-anchor="middle" class="box-sub">Terraform</text>
+      <text x="612" y="442" text-anchor="middle" class="box-sub">(IaC)</text>
+      <rect x="670" y="412" width="105" height="36" class="box"/>
+      <text x="722" y="430" text-anchor="middle" class="box-sub">GitHub Actions</text>
+      <text x="722" y="442" text-anchor="middle" class="box-sub">(CI/CD)</text>
+      <rect x="565" y="458" width="210" height="36" class="box"/>
+      <text x="670" y="480" text-anchor="middle" class="box-sub">Docker · ECS Fargate · ECR</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══════════════ SERVICES DETAIL ═══════════════ -->
+<section class="section container">
+  <p class="section-num">03 — Service Breakdown</p>
+  <h2>What Each Service Does</h2>
+  <p class="section-lead">Click any service to expand its responsibilities, endpoints, data models, and tech stack. Each maps directly to roadmap topics.</p>
+
+  <div class="services">
+
+    <!-- API Gateway -->
+    <div class="svc gateway open">
+      <div class="svc-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="svc-icon">🚪</div>
+        <div class="svc-header-text">
+          <h3>API Gateway</h3>
+          <span class="svc-sub">gateway-service · port 8080</span>
+        </div>
+        <span class="svc-toggle">▾</span>
+      </div>
+      <div class="svc-body">
+        <p class="svc-section-label">Responsibilities</p>
+        <ul>
+          <li>Route all inbound requests to downstream services via Spring Cloud Gateway</li>
+          <li>JWT token validation and extraction — pass user context via headers</li>
+          <li>Rate limiting per client using Redis-backed <code>RequestRateLimiter</code> filter</li>
+          <li>Circuit breaker with Resilience4j — fallback responses when services are down</li>
+          <li>Request/response logging and correlation ID injection for tracing</li>
+        </ul>
+        <p class="svc-section-label">Stack</p>
+        <div class="tech-tags">
+          <span class="tt spring">Spring Cloud Gateway</span>
+          <span class="tt spring">Spring Security</span>
+          <span class="tt spring">Resilience4j</span>
+          <span class="tt db">Redis</span>
+          <span class="tt ops">OpenTelemetry</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Service -->
+    <div class="svc account">
+      <div class="svc-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="svc-icon">👤</div>
+        <div class="svc-header-text">
+          <h3>Account Service</h3>
+          <span class="svc-sub">account-service · port 8081</span>
+        </div>
+        <span class="svc-toggle">▾</span>
+      </div>
+      <div class="svc-body">
+        <p class="svc-section-label">Responsibilities</p>
+        <ul>
+          <li>User registration and authentication — issue JWT access + refresh tokens</li>
+          <li>CRUD for bank accounts (checking, savings, investment) with owner validation</li>
+          <li>Balance management — atomic balance updates using pessimistic locking</li>
+          <li>Publish <code>account.created</code> and <code>account.balance-low</code> events to Kafka</li>
+          <li>Expose internal gRPC/REST endpoint for Transaction Service balance checks</li>
+        </ul>
+        <p class="svc-section-label">Data Model</p>
+        <div class="model-block"><pre><span class="ann">@Entity</span>
+<span class="ann">@Table</span>(name = <span class="str">"accounts"</span>)
+<span class="kw">public class</span> <span class="type">Account</span> {
+    <span class="ann">@Id</span> <span class="ann">@GeneratedValue</span>(strategy = GenerationType.UUID)
+    <span class="kw">private</span> <span class="type">UUID</span> id;
+    <span class="kw">private</span> <span class="type">UUID</span> userId;
+    <span class="ann">@Enumerated</span>(EnumType.STRING)
+    <span class="kw">private</span> <span class="type">AccountType</span> type; <span class="cmt">// CHECKING, SAVINGS, INVESTMENT</span>
+    <span class="kw">private</span> <span class="type">BigDecimal</span> balance;
+    <span class="kw">private</span> <span class="type">String</span> currency; <span class="cmt">// USD, AED, GEL</span>
+    <span class="ann">@Version</span>
+    <span class="kw">private</span> <span class="type">Long</span> version; <span class="cmt">// Optimistic locking</span>
+}</pre></div>
+        <p class="svc-section-label">Stack</p>
+        <div class="tech-tags">
+          <span class="tt spring">Spring Boot 3</span>
+          <span class="tt spring">Spring Data JPA</span>
+          <span class="tt spring">Spring Security</span>
+          <span class="tt db">PostgreSQL</span>
+          <span class="tt msg">Kafka Producer</span>
+          <span class="tt test">JUnit 5 + Mockito</span>
+          <span class="tt test">Testcontainers</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transaction Service -->
+    <div class="svc txn">
+      <div class="svc-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="svc-icon">💸</div>
+        <div class="svc-header-text">
+          <h3>Transaction Service</h3>
+          <span class="svc-sub">transaction-service · port 8082</span>
+        </div>
+        <span class="svc-toggle">▾</span>
+      </div>
+      <div class="svc-body">
+        <p class="svc-section-label">Responsibilities</p>
+        <ul>
+          <li>Process deposits, withdrawals, and peer-to-peer transfers with idempotency keys</li>
+          <li>Validate balances via synchronous call to Account Service (OpenFeign client)</li>
+          <li>Auto-categorize transactions (groceries, utilities, entertainment) using rule engine</li>
+          <li>Publish <code>txn.created</code> and <code>txn.categorized</code> events to Kafka</li>
+          <li>Provide paginated transaction history with filters (date range, category, amount)</li>
+          <li>Monthly spending aggregation endpoint — consumed by AI Advisor for analysis</li>
+        </ul>
+        <p class="svc-section-label">Key Patterns</p>
+        <ul>
+          <li>DDD Layered Architecture — Domain / Application / Infrastructure / Presentation, enforced by ArchUnit</li>
+          <li>CQRS — separate command services (write) and query services (read), each independently testable</li>
+          <li>Ports &amp; Adapters — domain repository ports are interfaces; JPA adapter classes implement them (avoids generic type conflicts with Spring Data)</li>
+          <li>Output port for Account Service — <code>AccountServicePort</code> interface in Application layer; <code>AccountServiceAdapter</code> (Feign) in Infrastructure</li>
+          <li>Transactional Outbox — <code>DomainEventToOutboxListener</code> writes outbox row <em>before commit</em> (@TransactionalEventListener), <code>OutboxPublisherService</code> polls every 2s</li>
+          <li>Transfer Saga — Reserve → Debit → Credit (6 phases), compensates via <code>release()</code> on any failure</li>
+          <li>Idempotency — <code>IdempotencyService</code> with <code>REQUIRES_NEW</code> TX; uses Java 21 sealed interface (<code>Proceed | Cached</code>); serialized response replay on duplicate key</li>
+          <li>Category Rule Engine — priority chain: TRANSFER type → MCC lookup → keyword matching → fallback OTHER; pure Java, no Spring in domain</li>
+        </ul>
+        <p class="svc-section-label">Architecture (actual — reference for other services)</p>
+        <ul>
+          <li><strong>domain/model/</strong> — <code>Transaction</code>, <code>IdempotencyKey</code>, <code>OutboxEvent</code>, enums, value objects</li>
+          <li><strong>domain/repository/</strong> — Port interfaces: <code>TransactionRepositoryPort</code>, <code>IdempotencyKeyRepositoryPort</code>, <code>OutboxEventRepositoryPort</code></li>
+          <li><strong>domain/event/</strong> — Java records: <code>TransactionCreatedDomainEvent</code>, <code>TransactionCategorizedDomainEvent</code></li>
+          <li><strong>domain/exception/</strong> — 8 domain exceptions (BusinessRuleException, SameAccountTransferException, InsufficientFundsException, …)</li>
+          <li><strong>domain/service/</strong> — <code>CategoryRuleEngine</code>, <code>MccCategoryMapping</code>, <code>KeywordCategoryMapping</code> (pure Java)</li>
+          <li><strong>application/command/</strong> — <code>DepositCommandService</code>, <code>WithdrawalCommandService</code>, <code>TransferCommandService</code>, <code>CategoryCommandService</code></li>
+          <li><strong>application/query/</strong> — <code>TransactionQueryService</code> (readOnly = true)</li>
+          <li><strong>application/port/out/</strong> — <code>AccountServicePort</code> (output port interface)</li>
+          <li><strong>application/shared/</strong> — <code>IdempotencyService</code></li>
+          <li><strong>infrastructure/persistence/</strong> — <code>TransactionJpaRepository</code> (Spring Data) + <code>TransactionRepositoryAdapter</code> (implements port)</li>
+          <li><strong>infrastructure/client/</strong> — <code>AccountServiceFeignClient</code> + <code>AccountServiceAdapter</code> (implements port)</li>
+          <li><strong>infrastructure/messaging/</strong> — <code>DomainEventToOutboxListener</code> + <code>OutboxPublisherService</code></li>
+          <li><strong>infrastructure/job/</strong> — <code>IdempotencyCleanupJob</code> (scheduled hourly)</li>
+          <li><strong>presentation/controller/</strong> — <code>TransactionController</code>, <code>CategoryController</code>; account ownership validated from <code>X-Account-Ids</code> header</li>
+          <li><strong>presentation/mapper/</strong> — <code>TransactionMapper</code> (MapStruct)</li>
+          <li><strong>presentation/exception/</strong> — <code>GlobalExceptionHandler</code> handles domain exceptions + <code>MissingRequestHeaderException</code></li>
+        </ul>
+        <p class="svc-section-label">Stack</p>
+        <div class="tech-tags">
+          <span class="tt spring">Spring Boot 3.4</span>
+          <span class="tt spring">Spring Data JPA</span>
+          <span class="tt spring">OpenFeign + Resilience4j</span>
+          <span class="tt spring">MapStruct</span>
+          <span class="tt spring">SpringDoc OpenAPI 3</span>
+          <span class="tt db">PostgreSQL 16</span>
+          <span class="tt db">Liquibase</span>
+          <span class="tt msg">Kafka Producer (idempotent, snappy)</span>
+          <span class="tt test">JUnit 5 + Mockito</span>
+          <span class="tt test">Testcontainers</span>
+          <span class="tt test">ArchUnit 1.3</span>
+          <span class="tt test">WireMock</span>
+          <span class="tt ops">JaCoCo 85%/75%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Service -->
+    <div class="svc notif">
+      <div class="svc-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="svc-icon">🔔</div>
+        <div class="svc-header-text">
+          <h3>Notification Service</h3>
+          <span class="svc-sub">notification-service · port 8083</span>
+        </div>
+        <span class="svc-toggle">▾</span>
+      </div>
+      <div class="svc-body">
+        <p class="svc-section-label">Responsibilities</p>
+        <ul>
+          <li>Consume Kafka events: <code>txn.created</code>, <code>account.balance-low</code>, <code>alert.triggered</code></li>
+          <li>Fan-out via SNS topic → SQS queues for email, push, and webhook channels</li>
+          <li>Template-based notification rendering (Thymeleaf templates)</li>
+          <li>Notification preferences per user — opt-in/out for each channel and event type</li>
+          <li>Dead-letter queue (DLQ) handling for failed notification deliveries</li>
+          <li>Notification history API — mark as read, filter by type</li>
+        </ul>
+        <p class="svc-section-label">Event-Driven Flow</p>
+        <ul>
+          <li>Kafka consumer group → process event → publish to SNS → fan-out to SQS queues</li>
+          <li>Each SQS queue has a dedicated processor (email worker, webhook worker)</li>
+          <li>Retry with exponential backoff → DLQ after 3 failures</li>
+        </ul>
+        <p class="svc-section-label">Stack</p>
+        <div class="tech-tags">
+          <span class="tt msg">Kafka Consumer</span>
+          <span class="tt cloud">AWS SNS</span>
+          <span class="tt cloud">AWS SQS</span>
+          <span class="tt spring">Spring Boot 3</span>
+          <span class="tt db">PostgreSQL</span>
+          <span class="tt test">JUnit 5</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Advisor -->
+    <div class="svc advisor">
+      <div class="svc-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="svc-icon">🤖</div>
+        <div class="svc-header-text">
+          <h3>AI Advisor Service</h3>
+          <span class="svc-sub">advisor-service · port 8084</span>
+        </div>
+        <span class="svc-toggle">▾</span>
+      </div>
+      <div class="svc-body">
+        <p class="svc-section-label">Responsibilities</p>
+        <ul>
+          <li>Generate AI-powered spending insights: "You spent 40% more on dining this month"</li>
+          <li>RAG pipeline: embed user's transaction summaries into pgvector, retrieve relevant context, pass to LLM</li>
+          <li>Context-aware financial Q&A: "How much did I spend on groceries in March?"</li>
+          <li>Savings goal recommendations based on spending patterns</li>
+          <li>Session-based conversation memory — maintain chat context across API calls</li>
+        </ul>
+        <p class="svc-section-label">RAG Architecture</p>
+        <ul>
+          <li>Consume <code>txn.categorized</code> events → aggregate monthly summaries → embed with OpenAI API</li>
+          <li>Store embeddings in PostgreSQL pgvector extension</li>
+          <li>On query: embed question → similarity search → inject top-K results as context → LLM completion</li>
+          <li>Spring AI's ChatClient with system prompt + retrieved documents</li>
+        </ul>
+        <p class="svc-section-label">Stack</p>
+        <div class="tech-tags">
+          <span class="tt ai">Spring AI</span>
+          <span class="tt ai">LangChain4j</span>
+          <span class="tt ai">OpenAI / Anthropic API</span>
+          <span class="tt db">pgvector</span>
+          <span class="tt msg">Kafka Consumer</span>
+          <span class="tt spring">Spring Boot 3</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ API ENDPOINTS ═══════════════ -->
+<section class="section container">
+  <p class="section-num">04 — API Design</p>
+  <h2>Core Endpoints</h2>
+  <p class="section-lead">RESTful API design through the Gateway. All routes require JWT except auth endpoints.</p>
+
+  <table class="api-table">
+    <thead><tr><th>Method</th><th>Path</th><th>Service</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/auth/register</td><td>Account</td><td>Create user + default checking account</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/auth/login</td><td>Account</td><td>Returns JWT access + refresh tokens</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/accounts</td><td>Account</td><td>List user's accounts with balances</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/accounts</td><td>Account</td><td>Open new account (savings, investment)</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/transactions/deposit</td><td>Transaction</td><td>Deposit funds (idempotent)</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/transactions/transfer</td><td>Transaction</td><td>Transfer between accounts (saga)</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/transactions?from=&to=&cat=</td><td>Transaction</td><td>Paginated history with filters</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/transactions/summary/monthly</td><td>Transaction</td><td>Spending aggregation by category</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/advisor/chat</td><td>AI Advisor</td><td>Ask AI about spending (RAG)</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/advisor/insights</td><td>AI Advisor</td><td>Auto-generated spending insights</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/notifications</td><td>Notification</td><td>User's notification history</td></tr>
+      <tr><td><span class="method put">PUT</span></td><td class="api-path">/api/notifications/{id}/read</td><td>Notification</td><td>Mark notification as read</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════ IMPLEMENTATION STEPS ═══════════════ -->
+<section class="section container">
+  <p class="section-num">05 — Build Order</p>
+  <h2>Step-by-Step Implementation</h2>
+  <p class="section-lead">Aligned with your 4-week roadmap. Each step builds on the previous one — you have a working, progressively richer system at every stage.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <h4>Project Skeleton &amp; Account Service CRUD <span class="step-week w1">WEEK 1</span></h4>
+        <p>Create a multi-module Gradle project via Spring Initializr. Build the Account Service first — User entity, Account entity, JPA repositories, REST controllers. Get a clean CRUD API running with PostgreSQL in Docker Compose. Write your first JUnit 5 + Mockito tests.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <h4>Authentication &amp; API Gateway <span class="step-week w1">WEEK 1</span></h4>
+        <p>Add Spring Security with JWT to Account Service (issue tokens on login). Stand up API Gateway with Spring Cloud Gateway — route <code>/api/accounts/**</code> to Account Service. Add JWT validation filter in the Gateway. Test with Postman or HTTPie.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <h4>Transaction Service &amp; Inter-Service Communication <span class="step-week w2">WEEK 2</span></h4>
+        <p>Build Transaction Service — deposit, withdraw, transfer endpoints. Use OpenFeign to call Account Service for balance validation. Implement the saga pattern for transfers (debit → credit → compensating rollback). Add idempotency key handling. Write integration tests with Testcontainers.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <h4>Kafka Integration &amp; Event Publishing <span class="step-week w2">WEEK 2</span></h4>
+        <p>Add Kafka to Docker Compose. Configure Spring Kafka in Transaction Service — publish <code>txn.created</code> events on every transaction. Implement the transactional outbox pattern (write event to DB → poll and publish). Add Kafka consumer in Account Service for cross-service balance sync.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <h4>Notification Service &amp; SNS/SQS Fan-Out <span class="step-week w3">WEEK 3</span></h4>
+        <p>Build Notification Service — Kafka consumer listens for events. Implement SNS/SQS pattern using LocalStack in Docker for local development. Set up DLQ for failed deliveries. Add notification preferences and history endpoints. Wire through Gateway.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <h4>Terraform &amp; Docker Deployment <span class="step-week w3">WEEK 3</span></h4>
+        <p>Write Dockerfiles for each service (multi-stage builds with JVM tuning). Create Terraform configs: VPC, ECS Fargate cluster, RDS PostgreSQL, ElastiCache Redis, MSK (managed Kafka). Define everything in <code>/infra</code> directory. Test with <code>terraform plan</code> against AWS free tier.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <h4>CI/CD Pipeline &amp; Deployment Strategy <span class="step-week w3">WEEK 3</span></h4>
+        <p>GitHub Actions workflow: checkout → build → test → Docker build → push to ECR → deploy to ECS. Add test coverage gates (JaCoCo). Implement blue/green deployment with ECS task definitions. Add a feature flag for the AI Advisor endpoint.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <h4>Observability Stack <span class="step-week w4">WEEK 4</span></h4>
+        <p>Add OpenTelemetry Java agent to all services (auto-instrumentation). Configure Micrometer metrics → Prometheus. Set up Grafana dashboards for request latency, error rates, Kafka lag. Add structured JSON logging with Logback + correlation IDs. Spring Boot Actuator health endpoints.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <h4>AI Advisor Service &amp; RAG Pipeline <span class="step-week w4">WEEK 4</span></h4>
+        <p>Build AI Advisor — consumes <code>txn.categorized</code> events, aggregates monthly spending, embeds summaries into pgvector. Implement RAG: on user query, embed question → similarity search → inject context → LLM call via Spring AI ChatClient. Add session-based conversation memory. This is your "wow factor" feature.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-content">
+        <h4>Resilience, Polish &amp; Documentation <span class="step-week w4">WEEK 4</span></h4>
+        <p>Add Resilience4j circuit breakers to all inter-service calls (fallback responses). Rate limiting on Gateway with Redis. Write a comprehensive <code>README.md</code> with architecture diagram, setup instructions, and design decisions. Record a 3-minute demo video walking through the system.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ TECH COVERAGE CHECKLIST ═══════════════ -->
+<section class="section container">
+  <p class="section-num">06 — Coverage Matrix</p>
+  <h2>Every Vacancy Requirement, Covered</h2>
+  <p class="section-lead">Cross-reference what you build against what both job descriptions ask for.</p>
+
+  <div class="checklist-grid">
+    <div class="check-group">
+      <h4>☕ Java &amp; Spring Ecosystem</h4>
+      <div class="check-item">Java 21 (records, virtual threads, sealed classes)</div>
+      <div class="check-item">Spring Boot 3 (all 5 services)</div>
+      <div class="check-item">Spring Data JPA + Hibernate (Account, Txn)</div>
+      <div class="check-item">Spring Security + JWT auth</div>
+      <div class="check-item">Spring Cloud Gateway (routing, filters)</div>
+      <div class="check-item">Spring AI (RAG pipeline)</div>
+      <div class="check-item">Gradle multi-module build</div>
+    </div>
+    <div class="check-group">
+      <h4>🏗️ Architecture Patterns</h4>
+      <div class="check-item">DDD Layered Architecture (Domain / Application / Infrastructure / Presentation)</div>
+      <div class="check-item">CQRS (separate command + query services)</div>
+      <div class="check-item">Ports &amp; Adapters (JPA adapter + output ports)</div>
+      <div class="check-item">Domain Events + Transactional Outbox</div>
+      <div class="check-item">Microservices with service discovery</div>
+      <div class="check-item">Event-driven architecture (Kafka)</div>
+      <div class="check-item">Saga pattern (distributed transactions)</div>
+      <div class="check-item">API Gateway pattern</div>
+      <div class="check-item">Circuit breaker (Resilience4j)</div>
+      <div class="check-item">Fan-out with SNS/SQS</div>
+    </div>
+    <div class="check-group">
+      <h4>☁️ Cloud &amp; Infrastructure</h4>
+      <div class="check-item">AWS (ECS, RDS, SNS, SQS, ECR)</div>
+      <div class="check-item">Terraform infrastructure as code</div>
+      <div class="check-item">Docker multi-stage builds</div>
+      <div class="check-item">Docker Compose (local dev)</div>
+      <div class="check-item">GitHub Actions CI/CD pipeline</div>
+      <div class="check-item">Blue/green deployment strategy</div>
+      <div class="check-item">Feature flags</div>
+    </div>
+    <div class="check-group">
+      <h4>📊 Data &amp; Observability</h4>
+      <div class="check-item">PostgreSQL schema design &amp; indexing</div>
+      <div class="check-item">pgvector (AI embeddings store)</div>
+      <div class="check-item">Redis (caching, rate limiting)</div>
+      <div class="check-item">OpenTelemetry tracing</div>
+      <div class="check-item">Prometheus + Grafana metrics</div>
+      <div class="check-item">Structured logging (Logback JSON)</div>
+      <div class="check-item">Spring Boot Actuator health checks</div>
+    </div>
+    <div class="check-group">
+      <h4>🤖 AI Integration</h4>
+      <div class="check-item">LLM API integration (Spring AI)</div>
+      <div class="check-item">RAG with retrieval + context injection</div>
+      <div class="check-item">Embedding generation &amp; similarity search</div>
+      <div class="check-item">Session-based conversation state</div>
+      <div class="check-item">Context-aware API design</div>
+    </div>
+    <div class="check-group">
+      <h4>🧪 Quality &amp; Testing</h4>
+      <div class="check-item">JUnit 5 unit tests</div>
+      <div class="check-item">Mockito mocking</div>
+      <div class="check-item">Testcontainers (integration tests)</div>
+      <div class="check-item">ArchUnit (architecture enforcement tests)</div>
+      <div class="check-item">MockMvc controller slice tests (@WebMvcTest)</div>
+      <div class="check-item">TDD workflow</div>
+      <div class="check-item">JaCoCo coverage reports (85%/75%)</div>
+      <div class="check-item">WireMock (external service stubs)</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SERVICE ARCHITECTURE BLUEPRINT ═══════════════ -->
+<section class="section container">
+  <p class="section-num">07 — Service Architecture Blueprint</p>
+  <h2>The Pattern Every Service Should Follow</h2>
+  <p class="section-lead">The Transaction Service is fully implemented and acts as the reference architecture. All subsequent services (Account, Notification, AI Advisor) must follow the same DDD Layered structure, CQRS split, port/adapter pattern, and ArchUnit enforcement.</p>
+
+  <h3 style="font-size:1.05rem;font-weight:700;color:var(--ink);margin-bottom:0.75rem;">Four-Layer Package Structure</h3>
+  <div class="layer-stack">
+    <div class="layer-row domain">
+      <div class="layer-label">Domain</div>
+      <div class="layer-content">
+        <strong>Pure Java — zero framework imports.</strong>
+        <code>model/</code> (JPA entities, enums, value objects) ·
+        <code>repository/</code> (port interfaces — no JPA annotations) ·
+        <code>event/</code> (Java records) ·
+        <code>exception/</code> (domain exceptions extend RuntimeException) ·
+        <code>service/</code> (domain services — constructible without Spring context)
+        <div class="dep-rule">Dependency rule: <strong>may not import any other layer</strong></div>
+      </div>
+    </div>
+    <div class="layer-row application">
+      <div class="layer-label">Application</div>
+      <div class="layer-content">
+        <strong>Use case orchestrators — CQRS split required.</strong>
+        <code>command/</code> (write: @Transactional, publishes ApplicationEvents) ·
+        <code>query/</code> (read: @Transactional(readOnly=true), no side effects) ·
+        <code>port/out/</code> (output port interfaces for external services) ·
+        <code>shared/</code> (cross-cutting application services, e.g. IdempotencyService)
+        <div class="dep-rule">Dependency rule: <strong>may only access Domain + Presentation</strong> (for DTOs/mapper injection)</div>
+      </div>
+    </div>
+    <div class="layer-row infrastructure">
+      <div class="layer-label">Infrastructure</div>
+      <div class="layer-content">
+        <strong>Framework implementations of domain/application ports.</strong>
+        <code>persistence/</code> (JpaRepository interfaces + *RepositoryAdapter classes) ·
+        <code>client/</code> (FeignClient + *Adapter implements output port) ·
+        <code>messaging/</code> (domain event listener, outbox poller, Kafka producers/consumers) ·
+        <code>config/</code> (Spring @Configuration beans, filters) ·
+        <code>job/</code> (@Scheduled background jobs)
+        <div class="dep-rule">Dependency rule: <strong>may only access Domain + Application</strong></div>
+      </div>
+    </div>
+    <div class="layer-row presentation">
+      <div class="layer-label">Presentation</div>
+      <div class="layer-content">
+        <strong>HTTP boundary — controllers, DTOs, mappers, exception handling.</strong>
+        <code>controller/</code> (@RestController — validates headers, routes to command/query services) ·
+        <code>dto/request/</code>, <code>dto/response/</code> (Java records with @Valid annotations) ·
+        <code>mapper/</code> (MapStruct @Mapper(componentModel="spring")) ·
+        <code>exception/</code> (@RestControllerAdvice maps domain exceptions → HTTP codes)
+        <div class="dep-rule">Dependency rule: <strong>may only access Application + Domain</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="font-size:1.05rem;font-weight:700;color:var(--ink);margin-bottom:0.75rem;">Key Patterns (Apply to Every Service)</h3>
+  <div class="pattern-grid">
+    <div class="pattern-card">
+      <h4>🔌 JPA Repository Adapter Pattern</h4>
+      <p>Never make a JPA Spring Data interface implement a domain port — generic type conflicts will occur. Always create a dedicated <code>*RepositoryAdapter</code> class annotated with <code>@Repository</code> that wraps the JPA interface and delegates all calls.</p>
+      <div class="model-block"><pre><span class="cmt">// Domain layer — interface, no JPA</span>
+<span class="kw">public interface</span> <span class="type">XxxRepositoryPort</span> {
+    <span class="type">Xxx</span> save(<span class="type">Xxx</span> entity);
+    <span class="type">Optional</span>&lt;<span class="type">Xxx</span>&gt; findById(<span class="type">UUID</span> id);
+}
+
+<span class="cmt">// Infrastructure — Spring Data (pure)</span>
+<span class="kw">public interface</span> <span class="type">XxxJpaRepository</span>
+    <span class="kw">extends</span> <span class="type">JpaRepository</span>&lt;<span class="type">Xxx</span>, <span class="type">UUID</span>&gt; {}
+
+<span class="cmt">// Infrastructure — adapter bridges the two</span>
+<span class="ann">@Repository</span>
+<span class="ann">@RequiredArgsConstructor</span>
+<span class="kw">public class</span> <span class="type">XxxRepositoryAdapter</span>
+    <span class="kw">implements</span> <span class="type">XxxRepositoryPort</span> {
+
+    <span class="kw">private final</span> <span class="type">XxxJpaRepository</span> jpa;
+
+    <span class="kw">public</span> <span class="type">Xxx</span> save(<span class="type">Xxx</span> e) { <span class="kw">return</span> jpa.save(e); }
+    <span class="kw">public</span> <span class="type">Optional</span>&lt;<span class="type">Xxx</span>&gt; findById(<span class="type">UUID</span> id) { <span class="kw">return</span> jpa.findById(id); }
+}</pre></div>
+    </div>
+    <div class="pattern-card">
+      <h4>📤 Domain Events + Outbox Listener</h4>
+      <p>Command services publish <em>domain events</em> (Java records in <code>domain/event/</code>) via Spring's <code>ApplicationEventPublisher</code>. Infrastructure listens with <code>@TransactionalEventListener(phase = BEFORE_COMMIT)</code> to write an outbox row atomically. A <code>@Scheduled</code> poller publishes to Kafka.</p>
+      <div class="model-block"><pre><span class="cmt">// domain/event — pure Java record</span>
+<span class="kw">public record</span> <span class="type">XxxCreatedDomainEvent</span>(<span class="type">Xxx</span> entity) {}
+
+<span class="cmt">// application/command — publishes inside @Transactional</span>
+eventPublisher.publishEvent(<span class="kw">new</span> <span class="type">XxxCreatedDomainEvent</span>(entity));
+
+<span class="cmt">// infrastructure/messaging — writes outbox row, SAME TX</span>
+<span class="ann">@TransactionalEventListener</span>(phase = <span class="type">BEFORE_COMMIT</span>)
+<span class="kw">public void</span> handle(<span class="type">XxxCreatedDomainEvent</span> e) {
+    outboxRepo.save(buildEvent(e.entity(), <span class="str">"xxx.created"</span>));
+}</pre></div>
+    </div>
+    <div class="pattern-card">
+      <h4>🔁 External Service Output Port</h4>
+      <p>Dependency on an external service is represented as a port interface in <code>application/port/out/</code>. Application command services depend only on the interface. Infrastructure provides the Feign-based adapter. This makes command services fully unit-testable with a mock.</p>
+      <div class="model-block"><pre><span class="cmt">// application/port/out — interface</span>
+<span class="kw">public interface</span> <span class="type">OtherServicePort</span> {
+    <span class="kw">void</span> doAction(<span class="type">UUID</span> id, <span class="type">BigDecimal</span> amount);
+}
+
+<span class="cmt">// infrastructure/client — Feign adapter</span>
+<span class="ann">@Component</span>
+<span class="ann">@RequiredArgsConstructor</span>
+<span class="kw">public class</span> <span class="type">OtherServiceAdapter</span>
+    <span class="kw">implements</span> <span class="type">OtherServicePort</span> {
+
+    <span class="kw">private final</span> <span class="type">OtherServiceFeignClient</span> feign;
+    <span class="kw">public void</span> doAction(<span class="type">UUID</span> id, <span class="type">BigDecimal</span> a) {
+        feign.doAction(id, <span class="kw">new</span> <span class="type">ActionRequest</span>(a));
+    }
+}</pre></div>
+    </div>
+    <div class="pattern-card">
+      <h4>🏛️ ArchUnit Enforcement</h4>
+      <p>Every service must include an <code>arch/ArchitectureTest.java</code> that verifies the layer dependency rules at build time. Use <code>consideringOnlyDependenciesInLayers()</code> to avoid false positives from third-party libraries.</p>
+      <div class="model-block"><pre><span class="ann">@AnalyzeClasses</span>(packages = <span class="str">"com.wisewallet.xxx"</span>,
+    importOptions = <span class="type">DoNotIncludeTests</span>.class)
+<span class="kw">public class</span> <span class="type">ArchitectureTest</span> {
+
+    <span class="ann">@ArchTest</span>
+    <span class="kw">static final</span> <span class="type">ArchRule</span> layeringRule =
+        layeredArchitecture()
+        .consideringOnlyDependenciesInLayers()
+        .layer(<span class="str">"Domain"</span>).definedBy(<span class="str">"..domain.."</span>)
+        .layer(<span class="str">"Application"</span>).definedBy(<span class="str">"..application.."</span>)
+        .layer(<span class="str">"Infrastructure"</span>).definedBy(<span class="str">"..infrastructure.."</span>)
+        .layer(<span class="str">"Presentation"</span>).definedBy(<span class="str">"..presentation.."</span>)
+        .whereLayer(<span class="str">"Domain"</span>).mayNotAccessAnyLayer()
+        .whereLayer(<span class="str">"Application"</span>)
+            .mayOnlyAccessLayers(<span class="str">"Domain"</span>, <span class="str">"Presentation"</span>)
+        .whereLayer(<span class="str">"Infrastructure"</span>)
+            .mayOnlyAccessLayers(<span class="str">"Domain"</span>, <span class="str">"Application"</span>)
+        .whereLayer(<span class="str">"Presentation"</span>)
+            .mayOnlyAccessLayers(<span class="str">"Application"</span>, <span class="str">"Domain"</span>);
+}</pre></div>
+    </div>
+  </div>
+
+  <h3 style="font-size:1.05rem;font-weight:700;color:var(--ink);margin:1.5rem 0 0.75rem;">Auth &amp; Headers Convention</h3>
+  <p style="font-size:0.88rem;color:var(--text-2);margin-bottom:0.75rem;">No service implements Spring Security. Auth is delegated to the API Gateway, which validates JWTs and injects user context as HTTP headers. Every service trusts these headers as the source of truth for identity and ownership.</p>
+  <table class="api-table">
+    <thead><tr><th>Header</th><th>Type</th><th>Injected by</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td class="api-path">X-User-Id</td><td>UUID</td><td>API Gateway</td><td>Authenticated user's ID — stored on every entity</td></tr>
+      <tr><td class="api-path">X-Account-Ids</td><td>CSV of UUIDs</td><td>API Gateway</td><td>Accounts owned by the user — controllers validate accountId against this list</td></tr>
+      <tr><td class="api-path">Idempotency-Key</td><td>String (max 255)</td><td>Client</td><td>Client-supplied deduplication key — required on all write endpoints</td></tr>
+      <tr><td class="api-path">X-Correlation-ID</td><td>UUID string</td><td>CorrelationIdFilter</td><td>Propagated or generated per request, set in MDC for log correlation</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:1.05rem;font-weight:700;color:var(--ink);margin:1.5rem 0 0.75rem;">Global Exception Handling Convention</h3>
+  <p style="font-size:0.88rem;color:var(--text-2);margin-bottom:0.75rem;">Every service's <code>GlobalExceptionHandler</code> (@RestControllerAdvice) must handle these mappings consistently:</p>
+  <table class="api-table">
+    <thead><tr><th>Exception</th><th>HTTP Status</th></tr></thead>
+    <tbody>
+      <tr><td class="api-path">MethodArgumentNotValidException</td><td>400 — body includes per-field validation errors</td></tr>
+      <tr><td class="api-path">MissingRequestHeaderException</td><td>400 — missing required header name in message</td></tr>
+      <tr><td class="api-path">ConstraintViolationException</td><td>400 — constraint violations list</td></tr>
+      <tr><td class="api-path">*NotFoundException</td><td>404</td></tr>
+      <tr><td class="api-path">BusinessRuleException (and subclasses)</td><td>422 Unprocessable Entity</td></tr>
+      <tr><td class="api-path">DuplicateKeyException / conflict types</td><td>409 Conflict</td></tr>
+      <tr><td class="api-path">ResponseStatusException</td><td>status from exception (e.g. 403 for ownership violation)</td></tr>
+      <tr><td class="api-path">*ServiceUnavailableException</td><td>503</td></tr>
+      <tr><td class="api-path">Exception (fallback)</td><td>500 — logged with full stack trace</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════ DOCKER COMPOSE ═══════════════ -->
+<section class="section container">
+  <p class="section-num">08 — Local Setup</p>
+  <h2>Docker Compose Blueprint</h2>
+  <p class="section-lead">Everything runs locally with a single <code>docker compose up</code>. Use LocalStack for AWS services.</p>
+  <div class="model-block"><pre><span class="cmt"># docker-compose.yml (infrastructure services)</span>
+<span class="kw">services</span>:
+  <span class="type">postgres</span>:
+    image: pgvector/pgvector:pg16
+    ports: [<span class="str">"5432:5432"</span>]
+    environment:
+      POSTGRES_DB: <span class="str">wisewallet</span>
+      POSTGRES_PASSWORD: <span class="str">dev_password</span>
+    volumes: [pgdata:/var/lib/postgresql/data]
+
+  <span class="type">redis</span>:
+    image: redis:7-alpine
+    ports: [<span class="str">"6379:6379"</span>]
+
+  <span class="type">kafka</span>:
+    image: confluentinc/cp-kafka:7.6.0
+    ports: [<span class="str">"9092:9092"</span>]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: <span class="str">1@kafka:29093</span>
+      <span class="cmt"># ... KRaft mode config (no Zookeeper)</span>
+
+  <span class="type">localstack</span>:
+    image: localstack/localstack:latest
+    ports: [<span class="str">"4566:4566"</span>]
+    environment:
+      SERVICES: <span class="str">sns,sqs</span>
+      <span class="cmt"># Simulates AWS SNS/SQS locally</span>
+
+  <span class="type">prometheus</span>:
+    image: prom/prometheus:latest
+    ports: [<span class="str">"9090:9090"</span>]
+    volumes: [./infra/prometheus.yml:/etc/prometheus/prometheus.yml]
+
+  <span class="type">grafana</span>:
+    image: grafana/grafana:latest
+    ports: [<span class="str">"3000:3000"</span>]
+
+<span class="kw">volumes</span>:
+  pgdata:</pre></div>
+</section>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <strong>The point of this project</strong> isn't to ship a production banking app — it's to demonstrate, in a single GitHub repo, that you can architect, build, test, deploy, and observe a modern Java microservices system with all the tools both Wio and Mal expect. When an interviewer asks "tell me about a distributed system you've built," this is your answer.
+  </div>
+</footer>
+
+</body>
+</html>

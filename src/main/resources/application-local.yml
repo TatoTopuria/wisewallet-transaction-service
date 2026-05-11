@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/postgres
+    username: postgres
+    password: ${DB_PASSWORD:dev_password}
+    hikari:
+      maximum-pool-size: 15
+  kafka:
+    bootstrap-servers: localhost:9092
+  jpa:
+    show-sql: false
+  cloud:
+    aws:
+      secretsmanager:
+        enabled: false
+
+logging:
+  level:
+    com.wisewallet: DEBUG

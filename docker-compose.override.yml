@@ -1,0 +1,143 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: wisewallet-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  localstack:
+    image: localstack/localstack:3.5
+    container_name: wisewallet-localstack
+    environment:
+      SERVICES: sns,sqs
+      AWS_DEFAULT_REGION: us-east-1
+    ports:
+      - "4566:4566"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  account-service:
+    build:
+      context: ../wisewallet-account-service
+      dockerfile: docker/Dockerfile
+    container_name: wisewallet-account-service
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      JWT_SECRET: local-dev-secret-replace-this-needs-32chars!
+      DB_PASSWORD: dev_password
+    ports:
+      - "8081:8081"
+      - "8091:8091"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  transaction-service:
+    environment:
+      ACCOUNT_SERVICE_URL: http://account-service:8081
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
+      INTERNAL_API_KEY: dev-internal-api-key
+    depends_on:
+      account-service:
+        condition: service_started
+
+  notification-service:
+    build:
+      context: ../wisewallet-notification-service
+      dockerfile: docker/Dockerfile
+    container_name: wisewallet-notification-service
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_CLOUD_AWS_ENDPOINT: http://localstack:4566
+      ACCOUNT_SERVICE_URL: http://account-service:8081
+      INTERNAL_API_KEY: dev-internal-api-key
+      SNS_TOPIC_ARN: arn:aws:sns:us-east-1:000000000000:wisewallet-notifications
+      DB_PASSWORD: dev_password
+    ports:
+      - "8083:8083"
+      - "8093:8093"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      account-service:
+        condition: service_started
+
+  advisor-service:
+    build:
+      context: ../wisewallet-advisor-service
+      dockerfile: docker/Dockerfile
+    container_name: wisewallet-advisor-service
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      ACCOUNT_SERVICE_URL: http://account-service:8081
+      OPENAI_API_KEY: local-dev-placeholder
+      DB_PASSWORD: dev_password
+      MANAGEMENT_PORT: 8094
+    ports:
+      - "8084:8084"
+      - "8094:8094"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      account-service:
+        condition: service_started
+
+  gateway:
+    build:
+      context: ../wisewallet-gateway
+      dockerfile: docker/Dockerfile
+    container_name: wisewallet-gateway
+    environment:
+      JWT_SECRET: local-dev-secret-replace-this-needs-32chars!
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ACCOUNT_SERVICE_URL: http://account-service:8081
+      TRANSACTION_SERVICE_URL: http://transaction-service:8082
+      NOTIFICATION_SERVICE_URL: http://notification-service:8083
+      ADVISOR_SERVICE_URL: http://advisor-service:8084
+      MANAGEMENT_PORT: 8090
+    ports:
+      - "8080:8080"
+      - "8090:8090"
+    depends_on:
+      redis:
+        condition: service_healthy
+      account-service:
+        condition: service_started
+      transaction-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      advisor-service:
+        condition: service_started

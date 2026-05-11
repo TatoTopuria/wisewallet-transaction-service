@@ -1,0 +1,62 @@
+[versions]
+spring-boot                = "3.4.4"
+spring-cloud               = "2024.0.1"
+spring-ai                  = "1.0.0"
+spring-cloud-aws           = "3.3.0"
+lombok                     = "1.18.36"
+lombok-mapstruct-binding   = "0.2.0"
+mapstruct                  = "1.6.3"
+testcontainers             = "1.20.4"
+resilience4j               = "2.2.0"
+logstash-logback-encoder   = "8.0"
+otel-agent                 = "2.12.0"
+wiremock                   = "3.10.0"
+archunit                   = "1.3.0"
+springdoc-openapi          = "2.8.3"
+
+[plugins]
+springBoot    = { id = "org.springframework.boot",          version.ref = "spring-boot" }
+springDepMgmt = { id = "io.spring.dependency-management",   version = "1.1.7" }
+
+[libraries]
+# BOMs
+spring-boot-bom        = { module = "org.springframework.boot:spring-boot-dependencies",       version.ref = "spring-boot" }
+spring-cloud-bom       = { module = "org.springframework.cloud:spring-cloud-dependencies",      version.ref = "spring-cloud" }
+testcontainers-bom     = { module = "org.testcontainers:testcontainers-bom",                   version.ref = "testcontainers" }
+
+# Annotation processors
+lombok-lib             = { module = "org.projectlombok:lombok",                                version.ref = "lombok" }
+lombok-mapstruct-binding = { module = "org.projectlombok:lombok-mapstruct-binding",            version.ref = "lombok-mapstruct-binding" }
+mapstruct-lib          = { module = "org.mapstruct:mapstruct",                                  version.ref = "mapstruct" }
+mapstruct-processor    = { module = "org.mapstruct:mapstruct-processor",                        version.ref = "mapstruct" }
+
+# Spring
+spring-boot-starter-web             = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-data-jpa        = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring-boot-starter-validation      = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-starter-actuator        = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-kafka           = { module = "org.springframework.kafka:spring-kafka" }
+spring-cloud-starter-openfeign      = { module = "org.springframework.cloud:spring-cloud-starter-openfeign" }
+
+# Resilience4j
+resilience4j-spring-boot3          = { module = "io.github.resilience4j:resilience4j-spring-boot3",   version.ref = "resilience4j" }
+resilience4j-feign                 = { module = "io.github.resilience4j:resilience4j-feign",          version.ref = "resilience4j" }
+
+# DB
+postgresql                         = { module = "org.postgresql:postgresql" }
+liquibase-core                     = { module = "org.liquibase:liquibase-core" }
+
+# Observability
+micrometer-prometheus              = { module = "io.micrometer:micrometer-registry-prometheus" }
+logstash-logback-encoder           = { module = "net.logstash.logback:logstash-logback-encoder",      version.ref = "logstash-logback-encoder" }
+
+# Test
+spring-boot-starter-test           = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-testcontainers         = { module = "org.springframework.boot:spring-boot-testcontainers" }
+spring-kafka-test                  = { module = "org.springframework.kafka:spring-kafka-test" }
+testcontainers-junit               = { module = "org.testcontainers:junit-jupiter" }
+testcontainers-postgresql          = { module = "org.testcontainers:postgresql" }
+testcontainers-kafka               = { module = "org.testcontainers:kafka" }
+wiremock                           = { module = "org.wiremock:wiremock-standalone",                    version.ref = "wiremock" }
+archunit-junit5                    = { module = "com.tngtech.archunit:archunit-junit5",                   version.ref = "archunit" }
+springdoc-openapi-webmvc           = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui",     version.ref = "springdoc-openapi" }

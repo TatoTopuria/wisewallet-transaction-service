@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: ${TEST_DATASOURCE_URL:jdbc:tc:postgresql:16://localhost/testdb}
+    username: test
+    password: test
+    hikari:
+      maximum-pool-size: 5
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}
+  cloud:
+    aws:
+      credentials:
+        instance-profile: false
+      secretsmanager:
+        enabled: false
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    com.wisewallet: DEBUG
+    org.testcontainers: WARN

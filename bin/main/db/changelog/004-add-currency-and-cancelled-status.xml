@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="004-add-currency-to-transactions" author="wisewallet-migrations" runOnChange="false" failOnError="true">
+        <addColumn schemaName="transaction" tableName="transactions">
+            <column name="currency" type="VARCHAR(3)" defaultValue="USD">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="004-extend-status-check-for-cancelled" author="wisewallet-migrations" runOnChange="false" failOnError="true">
+        <sql>
+            ALTER TABLE transaction.transactions
+                DROP CONSTRAINT IF EXISTS chk_transaction_status;
+
+            ALTER TABLE transaction.transactions
+                ADD CONSTRAINT chk_transaction_status
+                    CHECK (status IN ('PENDING', 'DEBITED', 'COMPLETED', 'FAILED', 'CANCELLED'));
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

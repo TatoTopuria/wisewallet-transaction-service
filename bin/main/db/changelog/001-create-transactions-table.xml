@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="001-create-transactions-table" author="wisewallet-migrations" runOnChange="false" failOnError="true">
+        <sql>CREATE SCHEMA IF NOT EXISTS transaction</sql>
+
+        <createTable tableName="transactions" schemaName="transaction">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="account_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="transfer_id" type="UUID">
+                <constraints nullable="true"/>
+            </column>
+            <column name="amount" type="NUMERIC(19,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="category" type="VARCHAR(20)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="mcc_code" type="VARCHAR(10)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="idempotency_key" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reservation_id" type="UUID">
+                <constraints nullable="true"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted_at" type="TIMESTAMPTZ">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMPTZ" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            ALTER TABLE transaction.transactions
+                ADD CONSTRAINT chk_transaction_type
+                    CHECK (type IN ('DEPOSIT', 'WITHDRAWAL', 'TRANSFER'));
+
+            ALTER TABLE transaction.transactions
+                ADD CONSTRAINT chk_transaction_status
+                    CHECK (status IN ('PENDING', 'DEBITED', 'COMPLETED', 'FAILED'));
+        </sql>
+
+        <!-- Indexes -->
+        <createIndex indexName="idx_transactions_user_created"
+                     tableName="transactions" schemaName="transaction">
+            <column name="user_id"/>
+            <column name="created_at" descending="true"/>
+        </createIndex>
+
+        <createIndex indexName="idx_transactions_account_created"
+                     tableName="transactions" schemaName="transaction">
+            <column name="account_id"/>
+            <column name="created_at" descending="true"/>
+        </createIndex>
+
+        <sql>
+            CREATE INDEX idx_transactions_user_status
+                ON transaction.transactions (user_id, status)
+                WHERE is_deleted = false;
+
+            CREATE INDEX idx_transactions_transfer_id
+                ON transaction.transactions (transfer_id)
+                WHERE transfer_id IS NOT NULL;
+
+            CREATE INDEX idx_transactions_user_type_created
+                ON transaction.transactions (user_id, type, created_at)
+                WHERE status = 'COMPLETED';
+
+            CREATE INDEX idx_transactions_account_category_created
+                ON transaction.transactions (account_id, category, created_at)
+                WHERE status = 'COMPLETED';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
