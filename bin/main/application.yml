@@ -20,6 +20,13 @@ spring:
       pageable:
         max-page-size: 100
         default-page-size: 10
+  cloud:
+    openfeign:
+      client:
+        config:
+          accountServiceFeignClient:
+            connectTimeout: 2000
+            readTimeout: 5000
 
 server:
   port: 8082
@@ -116,15 +123,6 @@ resilience4j:
 account:
   service:
     url: ${ACCOUNT_SERVICE_URL:http://localhost:8081}
-
-spring:
-  cloud:
-    openfeign:
-      client:
-        config:
-          accountServiceFeignClient:
-            connectTimeout: 2000
-            readTimeout: 5000
 
 springdoc:
   api-docs:

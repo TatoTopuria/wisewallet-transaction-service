@@ -2,6 +2,7 @@ package com.wisewallet.transaction.application.command;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wisewallet.transaction.application.port.out.AccountServicePort;
+import com.wisewallet.transaction.application.port.out.CompensationOutboxPort;
 import com.wisewallet.transaction.application.port.out.ReservationResult;
 import com.wisewallet.transaction.application.shared.IdempotencyService;
 import com.wisewallet.transaction.application.shared.IdempotencyService.IdempotencyResult;
@@ -12,7 +13,6 @@ import com.wisewallet.transaction.domain.model.TransactionCategory;
 import com.wisewallet.transaction.domain.model.TransactionStatus;
 import com.wisewallet.transaction.domain.model.TransactionType;
 import com.wisewallet.transaction.domain.repository.TransactionRepositoryPort;
-import com.wisewallet.transaction.infrastructure.messaging.CompensationOutboxService;
 import com.wisewallet.transaction.presentation.dto.request.TransferRequest;
 import com.wisewallet.transaction.presentation.dto.response.TransactionResponse;
 import com.wisewallet.transaction.presentation.dto.response.TransferResponse;
@@ -39,7 +39,7 @@ public class TransferCommandService {
 
     private final TransactionRepositoryPort transactionRepository;
     private final AccountServicePort accountServicePort;
-    private final CompensationOutboxService compensationOutboxService;
+    private final CompensationOutboxPort compensationOutboxService;
     private final IdempotencyService idempotencyService;
     private final TransactionMapper transactionMapper;
     private final ApplicationEventPublisher eventPublisher;

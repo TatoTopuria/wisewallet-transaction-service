@@ -1,6 +1,7 @@
 package com.wisewallet.transaction.infrastructure.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wisewallet.transaction.application.port.out.CompensationOutboxPort;
 import com.wisewallet.transaction.domain.model.OutboxEvent;
 import com.wisewallet.transaction.domain.repository.OutboxEventRepositoryPort;
 import com.wisewallet.transaction.infrastructure.messaging.event.TransferCompensationDomainEvent;
@@ -20,7 +21,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CompensationOutboxService {
+public class CompensationOutboxService implements CompensationOutboxPort {
 
     private static final String EVENT_TYPE = "txn.compensation.needed";
 
