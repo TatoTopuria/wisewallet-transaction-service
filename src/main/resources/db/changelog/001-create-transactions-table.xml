@@ -27,7 +27,7 @@
             <column name="type" type="VARCHAR(20)">
                 <constraints nullable="false"/>
             </column>
-            <column name="status" type="VARCHAR(10)">
+            <column name="status" type="VARCHAR(25)">
                 <constraints nullable="false"/>
             </column>
             <column name="category" type="VARCHAR(20)">

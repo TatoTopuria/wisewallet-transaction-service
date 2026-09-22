@@ -16,6 +16,9 @@
     <changeSet id="005-extend-status-check-compensation-pending" author="wisewallet-migrations" runOnChange="false" failOnError="true">
         <sql>
             ALTER TABLE transaction.transactions
+                ALTER COLUMN status TYPE VARCHAR(25);
+
+            ALTER TABLE transaction.transactions
                 DROP CONSTRAINT IF EXISTS chk_transaction_status;
 
             ALTER TABLE transaction.transactions
