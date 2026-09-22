@@ -21,8 +21,9 @@ import java.util.UUID;
 public class Transaction implements Persistable<UUID> {
 
     @Id
+    @Builder.Default
     @Column(name = "id", updatable = false, nullable = false)
-    private UUID id;
+    private UUID id = UUID.randomUUID();
 
     @Transient
     @Builder.Default
@@ -31,6 +32,13 @@ public class Transaction implements Persistable<UUID> {
     @Override
     public boolean isNew() {
         return isNew || version == null;
+    }
+
+    @PrePersist
+    void prePersist() {
+        if (this.id == null) {
+            this.id = UUID.randomUUID();
+        }
     }
 
     @PostPersist

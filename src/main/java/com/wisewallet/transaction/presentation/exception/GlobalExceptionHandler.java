@@ -124,6 +124,24 @@ public class GlobalExceptionHandler {
                 .body(errorBody(404, "Not Found", "No resource found for path: " + ex.getResourcePath(), request.getRequestURI(), null));
     }
 
+    @ExceptionHandler(feign.FeignException.class)
+    public ResponseEntity<Map<String, Object>> handleFeignException(
+            feign.FeignException ex, HttpServletRequest request) {
+
+        int status = ex.status() > 0 ? ex.status() : 502;
+        HttpStatus httpStatus = HttpStatus.resolve(status);
+        if (httpStatus == null) {
+            httpStatus = HttpStatus.BAD_GATEWAY;
+        }
+        String message = ex.contentUTF8();
+        if (message == null || message.isBlank()) {
+            message = ex.getMessage();
+        }
+        log.warn("Feign client returned status {} on path {}: {}", status, request.getRequestURI(), message);
+        return ResponseEntity.status(httpStatus)
+                .body(errorBody(status, httpStatus.getReasonPhrase(), message, request.getRequestURI(), null));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(
             Exception ex, HttpServletRequest request) {

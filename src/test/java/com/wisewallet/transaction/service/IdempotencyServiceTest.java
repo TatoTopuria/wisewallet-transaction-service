@@ -49,7 +49,7 @@ class IdempotencyServiceTest {
 
     @Test
     void checkOrInsert_completedKey_returnsCachedResponse() {
-        when(idempotencyKeyRepository.saveAndFlush(any()))
+        lenient().when(idempotencyKeyRepository.saveAndFlush(any()))
                 .thenThrow(new DataIntegrityViolationException("duplicate"));
 
         var existing = IdempotencyKey.builder()
@@ -73,7 +73,7 @@ class IdempotencyServiceTest {
 
     @Test
     void checkOrInsert_inFlightKey_throws409() {
-        when(idempotencyKeyRepository.saveAndFlush(any()))
+        lenient().when(idempotencyKeyRepository.saveAndFlush(any()))
                 .thenThrow(new DataIntegrityViolationException("duplicate"));
 
         var inFlight = IdempotencyKey.builder()
