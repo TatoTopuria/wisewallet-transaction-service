@@ -101,45 +101,35 @@ public class TransferCommandService {
             accountServicePort.commit(request.sourceAccountId(), reservation.reservationId(), request.currency());
         } catch (Exception commitEx) {
             // CRITICAL: destination credited but reservation not committed.
-            // Attempt synchronous compensation first; fall back to outbox if sync fails.
+            // Release cannot be called; schedule async compensation via outbox.
             log.error(
                     "CRITICAL: Transfer commit failed after credit succeeded. " +
                     "transferId={}, reservationId={}, sourceAccountId={}, destinationAccountId={}. " +
-                    "Attempting synchronous compensation.",
+                    "Scheduling compensation via outbox.",
                     transferId, reservation.reservationId(),
                     request.sourceAccountId(), request.destinationAccountId(), commitEx);
             meterRegistry.counter("transfer.commit.failure.count").increment();
 
-            boolean syncCompensated = trySyncCompensation(
-                    request.sourceAccountId(), reservation.reservationId(),
-                    request.destinationAccountId(), request.amount(), request.currency(),
-                    creditTxn.getId());
+            Transaction dTxn = transactionRepository.findById(debitTxn.getId()).orElse(debitTxn);
+            Transaction cTxn = transactionRepository.findById(creditTxn.getId()).orElse(creditTxn);
 
-            if (syncCompensated) {
-                failBothLegs(debitTxn, creditTxn, idempotencyKey, userId,
-                        "Transfer commit failed; compensation applied", 422);
-            } else {
-                // Sync compensation failed — schedule via outbox (survives rollback)
-                Transaction dTxn = transactionRepository.findById(debitTxn.getId()).orElse(debitTxn);
-                Transaction cTxn = transactionRepository.findById(creditTxn.getId()).orElse(creditTxn);
+            dTxn.setStatus(TransactionStatus.COMPENSATION_PENDING);
+            cTxn.setStatus(TransactionStatus.COMPENSATION_PENDING);
+            transactionRepository.save(dTxn);
+            transactionRepository.save(cTxn);
+            transactionRepository.flush();
+            compensationOutboxService.scheduleCompensation(
+                    transferId, reservation.reservationId(),
+                    request.sourceAccountId(), request.destinationAccountId(),
+                    request.amount(), request.currency(), cTxn.getId());
 
-                dTxn.setStatus(TransactionStatus.COMPENSATION_PENDING);
-                cTxn.setStatus(TransactionStatus.COMPENSATION_PENDING);
-                transactionRepository.save(dTxn);
-                transactionRepository.save(cTxn);
-                transactionRepository.flush();
-                compensationOutboxService.scheduleCompensation(
-                        transferId, reservation.reservationId(),
-                        request.sourceAccountId(), request.destinationAccountId(),
-                        request.amount(), request.currency(), cTxn.getId());
-
-                try {
-                    idempotencyService.complete(idempotencyKey, userId, 503,
-                            objectMapper.writeValueAsString(Map.of("error", "Transfer commit failed; scheduled for compensation")));
-                } catch (Exception e) {
-                    log.warn("Failed to store failure idempotency response for key {}", idempotencyKey, e);
-                }
+            try {
+                idempotencyService.complete(idempotencyKey, userId, 422,
+                        objectMapper.writeValueAsString(Map.of("error", "Transfer commit failed; scheduled for compensation")));
+            } catch (Exception e) {
+                log.warn("Failed to store failure idempotency response for key {}", idempotencyKey, e);
             }
+
             throw new BusinessRuleException(
                     "Transfer commit failed after credit. Contact support with transferId: " + transferId);
         }
@@ -281,34 +271,6 @@ public class TransferCommandService {
         log.error("All release retries exhausted. Scheduling async compensation. transferId={}, reservationId={}",
                 transferId, reservationId);
         return false;
-    }
-
-    /**
-     * Synchronous compensation after commit failure:
-     * 1. Release source reservation.
-     * 2. Debit destination to reverse the credit.
-     * Returns true if both operations succeeded.
-     */
-    private boolean trySyncCompensation(UUID sourceAccountId, UUID reservationId,
-                                        UUID destinationAccountId, java.math.BigDecimal amount,
-                                        String currency, UUID creditTransactionId) {
-        try {
-            accountServicePort.release(sourceAccountId, reservationId, currency);
-        } catch (Exception releaseEx) {
-            log.error("Sync compensation: release failed. sourceAccountId={}, reservationId={}",
-                    sourceAccountId, reservationId, releaseEx);
-            return false;
-        }
-        UUID reversalTxnId = UUID.nameUUIDFromBytes(
-                ("debit-reverse:" + creditTransactionId)
-                        .getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        try {
-            accountServicePort.debit(destinationAccountId, amount, currency, reversalTxnId);
-            return true;
-        } catch (Exception debitEx) {
-            log.error("Sync compensation: debit-reversal failed. destinationAccountId={}", destinationAccountId, debitEx);
-            return false;
-        }
     }
 
     protected void failBothLegs(Transaction debitTxn, Transaction creditTxn,
