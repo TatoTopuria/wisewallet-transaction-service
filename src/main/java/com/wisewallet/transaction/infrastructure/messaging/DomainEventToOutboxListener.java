@@ -28,7 +28,7 @@ public class DomainEventToOutboxListener {
     private final OutboxEventRepositoryPort outboxEventRepository;
     private final ObjectMapper objectMapper;
 
-    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = true)
     public void handleTransactionCreated(TransactionCreatedDomainEvent domainEvent) {
         Transaction txn = domainEvent.transaction();
         TransactionCreatedEvent payload = new TransactionCreatedEvent(
@@ -46,7 +46,7 @@ public class DomainEventToOutboxListener {
         outboxEventRepository.save(buildEvent(txn.getId(), "txn.created", payload));
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT, fallbackExecution = true)
     public void handleTransactionCategorized(TransactionCategorizedDomainEvent domainEvent) {
         Transaction txn = domainEvent.transaction();
         TransactionCategorizedEvent payload = new TransactionCategorizedEvent(

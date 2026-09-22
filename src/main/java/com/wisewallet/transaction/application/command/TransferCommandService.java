@@ -6,6 +6,7 @@ import com.wisewallet.transaction.application.port.out.CompensationOutboxPort;
 import com.wisewallet.transaction.application.port.out.ReservationResult;
 import com.wisewallet.transaction.application.shared.IdempotencyService;
 import com.wisewallet.transaction.application.shared.IdempotencyService.IdempotencyResult;
+import com.wisewallet.transaction.domain.event.TransactionCategorizedDomainEvent;
 import com.wisewallet.transaction.domain.event.TransactionCreatedDomainEvent;
 import com.wisewallet.transaction.domain.exception.BusinessRuleException;
 import com.wisewallet.transaction.domain.model.Transaction;
@@ -25,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -46,7 +46,6 @@ public class TransferCommandService {
     private final MeterRegistry meterRegistry;
     private final ObjectMapper objectMapper;
 
-    @Transactional
     public TransferResponse transfer(UUID userId, String idempotencyKey, TransferRequest request) {
         IdempotencyResult result = idempotencyService.checkOrInsert(idempotencyKey, userId);
 
@@ -120,15 +119,23 @@ public class TransferCommandService {
                 failBothLegs(debitTxn, creditTxn, idempotencyKey, userId,
                         "Transfer commit failed; compensation applied", 422);
             } else {
-                // Sync compensation failed — schedule via outbox (REQUIRES_NEW, survives rollback)
+                // Sync compensation failed — schedule via outbox (survives rollback)
                 debitTxn.setStatus(TransactionStatus.COMPENSATION_PENDING);
                 creditTxn.setStatus(TransactionStatus.COMPENSATION_PENDING);
                 transactionRepository.save(debitTxn);
                 transactionRepository.save(creditTxn);
+                transactionRepository.flush();
                 compensationOutboxService.scheduleCompensation(
                         transferId, reservation.reservationId(),
                         request.sourceAccountId(), request.destinationAccountId(),
                         request.amount(), request.currency(), creditTxn.getId());
+
+                try {
+                    idempotencyService.complete(idempotencyKey, userId, 503,
+                            objectMapper.writeValueAsString(Map.of("error", "Transfer commit failed; scheduled for compensation")));
+                } catch (Exception e) {
+                    log.warn("Failed to store failure idempotency response for key {}", idempotencyKey, e);
+                }
             }
             throw new BusinessRuleException(
                     "Transfer commit failed after credit. Contact support with transferId: " + transferId);
@@ -175,6 +182,7 @@ public class TransferCommandService {
         debitTxn.setStatus(TransactionStatus.DEBITED);
         debitTxn.setReservationId(reservationId);
         transactionRepository.save(debitTxn);
+        transactionRepository.flush();
     }
 
     protected TransferResponse completeTransfer(Transaction debitTxn, Transaction creditTxn,
@@ -183,9 +191,12 @@ public class TransferCommandService {
         creditTxn.setStatus(TransactionStatus.COMPLETED);
         transactionRepository.save(debitTxn);
         transactionRepository.save(creditTxn);
+        transactionRepository.flush();
 
         eventPublisher.publishEvent(new TransactionCreatedDomainEvent(debitTxn));
+        eventPublisher.publishEvent(new TransactionCategorizedDomainEvent(debitTxn));
         eventPublisher.publishEvent(new TransactionCreatedDomainEvent(creditTxn));
+        eventPublisher.publishEvent(new TransactionCategorizedDomainEvent(creditTxn));
 
         List<TransactionResponse> responses = List.of(
                 transactionMapper.toResponse(debitTxn),
@@ -218,6 +229,7 @@ public class TransferCommandService {
         creditTxn.setStatus(TransactionStatus.FAILED);
         transactionRepository.save(debitTxn);
         transactionRepository.save(creditTxn);
+        transactionRepository.flush();
 
         eventPublisher.publishEvent(new TransactionCreatedDomainEvent(debitTxn));
         eventPublisher.publishEvent(new TransactionCreatedDomainEvent(creditTxn));
@@ -294,6 +306,7 @@ public class TransferCommandService {
         creditTxn.setStatus(TransactionStatus.FAILED);
         transactionRepository.save(debitTxn);
         transactionRepository.save(creditTxn);
+        transactionRepository.flush();
 
         eventPublisher.publishEvent(new TransactionCreatedDomainEvent(debitTxn));
         eventPublisher.publishEvent(new TransactionCreatedDomainEvent(creditTxn));

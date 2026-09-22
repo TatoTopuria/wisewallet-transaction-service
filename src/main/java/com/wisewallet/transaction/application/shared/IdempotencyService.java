@@ -64,12 +64,12 @@ public class IdempotencyService {
         }
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void complete(String key, UUID userId, int httpStatus, String responseBody) {
         idempotencyKeyRepository.findByKeyAndUserId(key, userId).ifPresent(record -> {
             record.setResponseStatus(httpStatus);
             record.setResponseBody(responseBody);
-            idempotencyKeyRepository.save(record);
+            idempotencyKeyRepository.saveAndFlush(record);
         });
     }
 }
