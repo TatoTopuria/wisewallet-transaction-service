@@ -157,6 +157,7 @@ class FilterIntegrationTest {
         return transactionRepository.save(Transaction.builder()
                 .userId(userId).accountId(accountId)
                 .amount(amount).type(type).status(status).category(category)
+                .currency("USD")
                 .idempotencyKey(UUID.randomUUID().toString())
                 .build());
     }

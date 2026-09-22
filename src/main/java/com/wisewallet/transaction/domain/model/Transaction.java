@@ -52,8 +52,9 @@ public class Transaction {
     @Column(name = "category", length = 20)
     private TransactionCategory category;
 
+    @Builder.Default
     @Column(name = "currency", length = 3, nullable = false)
-    private String currency;
+    private String currency = "USD";
 
     @Column(name = "mcc_code", length = 10)
     private String mccCode;

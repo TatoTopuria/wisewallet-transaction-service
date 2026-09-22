@@ -79,6 +79,7 @@ class MonthlyAggregationIT {
                 .amount(new BigDecimal("100.00"))
                 .type(TransactionType.DEPOSIT).status(TransactionStatus.COMPLETED)
                 .category(TransactionCategory.OTHER)
+                .currency("USD")
                 .idempotencyKey(UUID.randomUUID().toString()).build());
 
         transactionRepository.save(Transaction.builder()
@@ -86,6 +87,7 @@ class MonthlyAggregationIT {
                 .amount(new BigDecimal("-50.00"))
                 .type(TransactionType.WITHDRAWAL).status(TransactionStatus.COMPLETED)
                 .category(TransactionCategory.GROCERIES)
+                .currency("USD")
                 .idempotencyKey(UUID.randomUUID().toString()).build());
 
         var now = LocalDate.now();

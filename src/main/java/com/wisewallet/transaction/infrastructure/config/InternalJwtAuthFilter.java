@@ -46,6 +46,16 @@ public class InternalJwtAuthFilter extends OncePerRequestFilter {
             } catch (InternalJwtValidator.InternalJwtException ex) {
                 log.warn("X-Service-Token validation failed: {}", ex.getMessage());
             }
+        } else {
+            String userId = request.getHeader("X-User-Id");
+            if (userId != null && !userId.isBlank()) {
+                var auth = new UsernamePasswordAuthenticationToken(
+                        userId,
+                        null,
+                        List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                );
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
         }
 
         filterChain.doFilter(request, response);
