@@ -26,3 +26,13 @@ wisewallet:
     api-key: test-internal-api-key
     jwt:
       secret: default-internal-jwt-secret-min-32-chars-for-test!
+
+resilience4j:
+  retry:
+    instances:
+      accountServiceRetry:
+        maxAttempts: 1
+      accountServiceCommit:
+        maxAttempts: 1
+      accountServiceRelease:
+        maxAttempts: 1
