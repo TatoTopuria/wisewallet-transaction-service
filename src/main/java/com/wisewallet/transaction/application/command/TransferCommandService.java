@@ -83,7 +83,7 @@ public class TransferCommandService {
         }
 
         // Phase 3 — Mark DEBITED [TX2]
-        markDebited(debitTxn, reservation.reservationId());
+        debitTxn = markDebited(debitTxn, reservation.reservationId());
 
         // Phase 4 — Credit destination [Feign]
         try {
@@ -120,15 +120,18 @@ public class TransferCommandService {
                         "Transfer commit failed; compensation applied", 422);
             } else {
                 // Sync compensation failed — schedule via outbox (survives rollback)
-                debitTxn.setStatus(TransactionStatus.COMPENSATION_PENDING);
-                creditTxn.setStatus(TransactionStatus.COMPENSATION_PENDING);
-                transactionRepository.save(debitTxn);
-                transactionRepository.save(creditTxn);
+                Transaction dTxn = transactionRepository.findById(debitTxn.getId()).orElse(debitTxn);
+                Transaction cTxn = transactionRepository.findById(creditTxn.getId()).orElse(creditTxn);
+
+                dTxn.setStatus(TransactionStatus.COMPENSATION_PENDING);
+                cTxn.setStatus(TransactionStatus.COMPENSATION_PENDING);
+                transactionRepository.save(dTxn);
+                transactionRepository.save(cTxn);
                 transactionRepository.flush();
                 compensationOutboxService.scheduleCompensation(
                         transferId, reservation.reservationId(),
                         request.sourceAccountId(), request.destinationAccountId(),
-                        request.amount(), request.currency(), creditTxn.getId());
+                        request.amount(), request.currency(), cTxn.getId());
 
                 try {
                     idempotencyService.complete(idempotencyKey, userId, 503,
@@ -171,36 +174,41 @@ public class TransferCommandService {
                 .idempotencyKey(idempotencyKey)
                 .build();
 
-        transactionRepository.save(debitTxn);
-        transactionRepository.save(creditTxn);
+        debitTxn = transactionRepository.save(debitTxn);
+        creditTxn = transactionRepository.save(creditTxn);
         transactionRepository.flush();
 
         return new Transaction[]{debitTxn, creditTxn};
     }
 
-    protected void markDebited(Transaction debitTxn, UUID reservationId) {
-        debitTxn.setStatus(TransactionStatus.DEBITED);
-        debitTxn.setReservationId(reservationId);
-        transactionRepository.save(debitTxn);
+    protected Transaction markDebited(Transaction debitTxn, UUID reservationId) {
+        Transaction dTxn = transactionRepository.findById(debitTxn.getId()).orElse(debitTxn);
+        dTxn.setStatus(TransactionStatus.DEBITED);
+        dTxn.setReservationId(reservationId);
+        dTxn = transactionRepository.save(dTxn);
         transactionRepository.flush();
+        return dTxn;
     }
 
     protected TransferResponse completeTransfer(Transaction debitTxn, Transaction creditTxn,
                                                 UUID transferId, String idempotencyKey, UUID userId) {
-        debitTxn.setStatus(TransactionStatus.COMPLETED);
-        creditTxn.setStatus(TransactionStatus.COMPLETED);
-        transactionRepository.save(debitTxn);
-        transactionRepository.save(creditTxn);
+        Transaction dTxn = transactionRepository.findById(debitTxn.getId()).orElse(debitTxn);
+        Transaction cTxn = transactionRepository.findById(creditTxn.getId()).orElse(creditTxn);
+
+        dTxn.setStatus(TransactionStatus.COMPLETED);
+        cTxn.setStatus(TransactionStatus.COMPLETED);
+        dTxn = transactionRepository.save(dTxn);
+        cTxn = transactionRepository.save(cTxn);
         transactionRepository.flush();
 
-        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(debitTxn));
-        eventPublisher.publishEvent(new TransactionCategorizedDomainEvent(debitTxn));
-        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(creditTxn));
-        eventPublisher.publishEvent(new TransactionCategorizedDomainEvent(creditTxn));
+        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(dTxn));
+        eventPublisher.publishEvent(new TransactionCategorizedDomainEvent(dTxn));
+        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(cTxn));
+        eventPublisher.publishEvent(new TransactionCategorizedDomainEvent(cTxn));
 
         List<TransactionResponse> responses = List.of(
-                transactionMapper.toResponse(debitTxn),
-                transactionMapper.toResponse(creditTxn)
+                transactionMapper.toResponse(dTxn),
+                transactionMapper.toResponse(cTxn)
         );
         TransferResponse response = new TransferResponse(transferId, responses);
 
@@ -225,19 +233,22 @@ public class TransferCommandService {
                     debitTxn.getAmount().negate(), currency, null);
         }
 
-        debitTxn.setStatus(TransactionStatus.FAILED);
-        creditTxn.setStatus(TransactionStatus.FAILED);
-        transactionRepository.save(debitTxn);
-        transactionRepository.save(creditTxn);
+        Transaction dTxn = transactionRepository.findById(debitTxn.getId()).orElse(debitTxn);
+        Transaction cTxn = transactionRepository.findById(creditTxn.getId()).orElse(creditTxn);
+
+        dTxn.setStatus(TransactionStatus.FAILED);
+        cTxn.setStatus(TransactionStatus.FAILED);
+        dTxn = transactionRepository.save(dTxn);
+        cTxn = transactionRepository.save(cTxn);
         transactionRepository.flush();
 
-        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(debitTxn));
-        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(creditTxn));
+        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(dTxn));
+        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(cTxn));
 
         try {
-            var failResult = new TransferResponse(debitTxn.getTransferId(), List.of(
-                    transactionMapper.toResponse(debitTxn),
-                    transactionMapper.toResponse(creditTxn)
+            var failResult = new TransferResponse(dTxn.getTransferId(), List.of(
+                    transactionMapper.toResponse(dTxn),
+                    transactionMapper.toResponse(cTxn)
             ));
             idempotencyService.complete(idempotencyKey, userId, 422, objectMapper.writeValueAsString(failResult));
         } catch (Exception e) {
@@ -302,14 +313,17 @@ public class TransferCommandService {
 
     protected void failBothLegs(Transaction debitTxn, Transaction creditTxn,
                                 String idempotencyKey, UUID userId, String reason, int statusCode) {
-        debitTxn.setStatus(TransactionStatus.FAILED);
-        creditTxn.setStatus(TransactionStatus.FAILED);
-        transactionRepository.save(debitTxn);
-        transactionRepository.save(creditTxn);
+        Transaction dTxn = transactionRepository.findById(debitTxn.getId()).orElse(debitTxn);
+        Transaction cTxn = transactionRepository.findById(creditTxn.getId()).orElse(creditTxn);
+
+        dTxn.setStatus(TransactionStatus.FAILED);
+        cTxn.setStatus(TransactionStatus.FAILED);
+        dTxn = transactionRepository.save(dTxn);
+        cTxn = transactionRepository.save(cTxn);
         transactionRepository.flush();
 
-        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(debitTxn));
-        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(creditTxn));
+        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(dTxn));
+        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(cTxn));
 
         try {
             idempotencyService.complete(idempotencyKey, userId, statusCode,
