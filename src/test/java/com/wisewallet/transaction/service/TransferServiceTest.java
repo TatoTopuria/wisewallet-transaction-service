@@ -64,7 +64,13 @@ class TransferServiceTest {
 
         when(idempotencyService.checkOrInsert(idempotencyKey, userId))
                 .thenReturn(new IdempotencyResult.Proceed());
-        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> {
+            Transaction t = inv.getArgument(0);
+            if (t.getId() == null) {
+                t.setId(UUID.randomUUID());
+            }
+            return t;
+        });
         when(transactionMapper.toResponse(any(Transaction.class))).thenReturn(mock(TransactionResponse.class));
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
     }

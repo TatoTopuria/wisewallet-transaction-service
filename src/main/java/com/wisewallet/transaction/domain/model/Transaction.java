@@ -45,8 +45,7 @@ public class Transaction {
 
     @Version
     @Column(name = "version", nullable = false)
-    @Builder.Default
-    private Long version = 0L;
+    private Long version;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "category", length = 20)
