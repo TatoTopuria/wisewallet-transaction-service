@@ -20,3 +20,9 @@ logging:
   level:
     com.wisewallet: DEBUG
     org.testcontainers: WARN
+
+wisewallet:
+  internal:
+    api-key: test-internal-api-key
+    jwt:
+      secret: default-internal-jwt-secret-min-32-chars-for-test!

@@ -29,17 +29,6 @@ public class IdempotencyService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public IdempotencyResult checkOrInsert(String key, UUID userId) {
-        var existing = idempotencyKeyRepository.findByKeyAndUserId(key, userId);
-        if (existing.isPresent()) {
-            IdempotencyKey record = existing.get();
-            if (record.getResponseBody() != null) {
-                return new IdempotencyResult.Cached(
-                        record.getResponseStatus(), record.getResponseBody());
-            }
-            throw new DuplicateIdempotencyKeyException(
-                    "Request with Idempotency-Key '" + key + "' is already in progress");
-        }
-
         try {
             IdempotencyKey record = IdempotencyKey.builder()
                     .id(UUID.randomUUID())
@@ -51,10 +40,10 @@ public class IdempotencyService {
             return new IdempotencyResult.Proceed();
         } catch (DataIntegrityViolationException e) {
             return idempotencyKeyRepository.findByKeyAndUserId(key, userId)
-                    .map(rec -> {
-                        if (rec.getResponseBody() != null) {
+                    .map(existing -> {
+                        if (existing.getResponseBody() != null) {
                             return (IdempotencyResult) new IdempotencyResult.Cached(
-                                    rec.getResponseStatus(), rec.getResponseBody());
+                                    existing.getResponseStatus(), existing.getResponseBody());
                         }
                         throw new DuplicateIdempotencyKeyException(
                                 "Request with Idempotency-Key '" + key + "' is already in progress");
