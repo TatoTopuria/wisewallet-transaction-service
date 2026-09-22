@@ -22,7 +22,7 @@ public class InternalJwtValidator {
 
     private final SecretKey signingKey;
 
-    public InternalJwtValidator(@Value("${wisewallet.internal.jwt.secret}") String secret) {
+    public InternalJwtValidator(@Value("${wisewallet.internal.jwt.secret:default-internal-jwt-secret-min-32-chars-for-test!}") String secret) {
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 

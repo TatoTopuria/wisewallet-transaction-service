@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 public class AccountServiceFeignConfig {
 
-    @Value("${wisewallet.internal.api-key}")
+    @Value("${wisewallet.internal.api-key:default-internal-api-key}")
     private String internalApiKey;
 
     @Bean
