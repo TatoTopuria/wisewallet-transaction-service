@@ -3,6 +3,7 @@ package com.wisewallet.transaction.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wisewallet.transaction.application.command.TransferCommandService;
 import com.wisewallet.transaction.application.port.out.AccountServicePort;
+import com.wisewallet.transaction.application.port.out.CompensationOutboxPort;
 import com.wisewallet.transaction.application.port.out.ReservationResult;
 import com.wisewallet.transaction.application.shared.IdempotencyService;
 import com.wisewallet.transaction.application.shared.IdempotencyService.IdempotencyResult;
@@ -40,6 +41,7 @@ class TransferServiceTest {
 
     @Mock TransactionRepositoryPort transactionRepository;
     @Mock AccountServicePort accountServicePort;
+    @Mock CompensationOutboxPort compensationOutboxService;
     @Mock IdempotencyService idempotencyService;
     @Mock TransactionMapper transactionMapper;
     @Mock org.springframework.context.ApplicationEventPublisher eventPublisher;
@@ -144,6 +146,8 @@ class TransferServiceTest {
                 .hasMessageContaining("commit failed");
 
         verify(counter).increment();
+        verify(compensationOutboxService).scheduleCompensation(
+                any(), eq(reservationId), eq(sourceId), eq(destId), eq(amount), eq("USD"), any());
     }
 
     @Test
